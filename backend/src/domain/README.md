@@ -1,0 +1,1 @@
+Esta es la capa de dominio. Todas las entidades (que no tiene que ver con la base de datos) van aquí

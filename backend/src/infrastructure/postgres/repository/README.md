@@ -1,0 +1,1 @@
+Aquí van todos los repositories, siendo un repository una capa de interacción con la capa de persistencia. **No se especifica un repositorio generla aquí**. En su defecto, se define una carpeta dependiendo de la base de datos que se usa (en nuestro caso, postgres).
