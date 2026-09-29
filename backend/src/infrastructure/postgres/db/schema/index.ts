@@ -1,0 +1,1 @@
+import { formatoTable } from './formato';
