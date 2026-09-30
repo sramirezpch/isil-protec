@@ -1,8 +1,15 @@
 import { Router } from "express";
-import { formatoController } from "../controllers/formatoController";
+import type { FormatoController } from "../controllers/formatoController";
 
-const formatoRoute = Router();
+export class FormatoRouter {
+  public router: Router;
 
-formatoRoute.get("/", formatoController.listarFormatos);
+  constructor(private readonly formatoController: FormatoController) {
+    this.router = Router();
+    this.initRoutes();
+  }
 
-export default formatoRoute;
+  private initRoutes(): void {
+    this.router.get('/', this.formatoController.getAllFormatos);
+  }
+}

@@ -1,13 +1,23 @@
 import { Request, Response } from 'express';
-import { formatoRepository } from '../../infrastructure/postgres/repository/formatoRepository';
+import { FormatoService } from '../../application/services/formatoService';
 
+export class FormatoController {
+  constructor(private readonly formatoService: FormatoService) {}
 
-export const formatoController = {
-  async listarFormatos(req: Request, res: Response) {
+  getAllFormatos = async (req: Request, res: Response): Promise<Response> => {
     try {
-      res.status(200).json(await formatoRepository.listAllFormatos());
+      const formatos = await this.formatoService.getAllFormatos();
+      return res.status(200).json({
+        success: true,
+        message: 'Formatos obtenidos exitosamente',
+        data: formatos
+      });
     } catch (error) {
-      res.status(500).json({ message: 'Error al obtener los formatos' });
+      return res.status(500).json({
+        success: false,
+        message: 'Error al obtener los formatos',
+        error
+      });
     }
-  }
-};
+  };
+}
