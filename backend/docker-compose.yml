@@ -39,7 +39,7 @@ services:
       - postgres-db
     environment:
       PORT: 3000
-      DATABASE_URL: "postgres://postgres:postgres@postgres-db:5432/db-proyecto-tecnologico"
+      DATABASE_URL: "postgres://postgres:postgres@postgres-db:5432/postgres"
 
 volumes:
   postgres_data:
