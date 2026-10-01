@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres-db:
     image: postgres:16-alpine
@@ -27,7 +25,9 @@ services:
       - postgres-db
 
   api:
-    build: . 
+    build:
+      context: .
+      target: dev
     container_name: isil_express_container
     restart: always
     ports:

@@ -7,3 +7,4 @@ dist
 Dockerfile
 docker-compose.yml
 *.log
+.pnpm-store

@@ -15,6 +15,13 @@
       "when": 1790829322781,
       "tag": "0001_modern_maddog",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790843012720,
+      "tag": "0002_warm_ravenous",
+      "breakpoints": true
     }
   ]
 }
