@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import type { FormatoController } from '../controllers/formato.controller';
+import type { FormatoController } from '../controllers/formato/formato.controller';
 
 export class FormatoRouter {
   public router: Router;

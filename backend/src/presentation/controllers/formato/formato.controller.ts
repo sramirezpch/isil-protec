@@ -1,16 +1,6 @@
 import type { Request, Response } from 'express';
-import type { FormatoService } from '../../application/services/formato.service';
-import type { DtoResponse } from './utils';
-
-const toResponseDto = (
-  success: boolean,
-  data: Record<string, unknown>,
-): DtoResponse => {
-  return {
-    success,
-    data,
-  };
-};
+import type { FormatoService } from '../../../application/services/formato.service';
+import { toResponseDto } from '../../../utils';
 
 export class FormatoController {
   constructor(private readonly formatoService: FormatoService) {}
