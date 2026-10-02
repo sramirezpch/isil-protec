@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "formato_name_normalized_unique" ON "formato" USING btree (lower(trim("name")));
