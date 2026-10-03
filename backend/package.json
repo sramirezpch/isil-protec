@@ -9,7 +9,8 @@
     "format": "biome format --write src/",
     "check": "biome check --write src/",
     "db:generate": "dotenv -- drizzle-kit generate --config ./src/infrastructure/postgres/db/drizzle.config.ts",
-    "db:migrate": "dotenv -- drizzle-kit migrate --config ./src/infrastructure/postgres/db/drizzle.config.ts"
+    "db:migrate": "dotenv -- drizzle-kit migrate --config ./src/infrastructure/postgres/db/drizzle.config.ts",
+    "db:seed": "dotenv -- tsx src/infrastructure/postgres/db/seed-database.ts"
   },
   "keywords": [],
   "author": "",
