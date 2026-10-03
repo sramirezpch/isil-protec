@@ -5,6 +5,7 @@ import { auditColumns } from './utils';
 export const brandTable = pgTable('brand', {
   id: uuid()
     .primaryKey()
+    .defaultRandom()
     .$defaultFn(() => uuidv7()),
   name: varchar({ length: 255 }).notNull(),
   active: boolean().notNull().default(true),
