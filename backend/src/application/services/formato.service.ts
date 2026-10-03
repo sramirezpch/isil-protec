@@ -8,11 +8,7 @@ export class FormatoService {
     return await this.formatoRepository.getAllFormatos();
   }
 
-  async addFormato(name: unknown) {
-    if (typeof name !== 'string') {
-      throw new InvalidFormatoNameError();
-    }
-
+  async addFormato(name: string) {
     const normalizedName = name.trim();
 
     if (!normalizedName || Array.from(normalizedName).length > 255) {

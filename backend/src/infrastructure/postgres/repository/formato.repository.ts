@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+import { DatabaseError } from 'pg';
 import type { IFormatoRepository } from '../../../application/port/formato.repository';
 import type { Formato } from '../../../domain/entities/formato.entity';
 import { FormatoNameAlreadyExistsError } from '../../../domain/errors/formato.errors';
@@ -17,8 +18,7 @@ export class FormatoRepository implements IFormatoRepository {
     const [existingFormato] = await db
       .select({ id: formatoTable.id })
       .from(formatoTable)
-      .where(sql`lower(trim(${formatoTable.name})) = lower(trim(${name}))`)
-      .limit(1);
+      .where(sql`lower(trim(${formatoTable.name})) = lower(trim(${name}))`);
 
     if (existingFormato) {
       throw new FormatoNameAlreadyExistsError();
@@ -32,7 +32,11 @@ export class FormatoRepository implements IFormatoRepository {
 
       return toDomain(formato);
     } catch (error) {
-      if (isFormatoNameUniqueViolation(error)) {
+      if (
+        error instanceof DatabaseError &&
+        error.code === '23505' &&
+        error.constraint === 'formato_name_normalized_unique'
+      ) {
         throw new FormatoNameAlreadyExistsError();
       }
 
@@ -40,11 +44,3 @@ export class FormatoRepository implements IFormatoRepository {
     }
   }
 }
-
-const isFormatoNameUniqueViolation = (error: unknown): boolean =>
-  typeof error === 'object' &&
-  error !== null &&
-  'code' in error &&
-  error.code === '23505' &&
-  'constraint' in error &&
-  error.constraint === 'formato_name_normalized_unique';
