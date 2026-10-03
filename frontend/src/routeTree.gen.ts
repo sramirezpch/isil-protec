@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as FormatoRouteImport } from './routes/formato'
+import { Route as MarcaIndexRouteImport } from './routes/marca/index'
+import { Route as MarcaNuevaRouteImport } from './routes/marca/nueva'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +30,53 @@ const FormatoRoute = FormatoRouteImport.update({
   path: '/formato',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MarcaIndexRoute = MarcaIndexRouteImport.update({
+  id: '/marca/',
+  path: '/marca/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarcaNuevaRoute = MarcaNuevaRouteImport.update({
+  id: '/marca/nueva',
+  path: '/marca/nueva',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/formato': typeof FormatoRoute
+  '/marca/nueva': typeof MarcaNuevaRoute
+  '/marca/': typeof MarcaIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/formato': typeof FormatoRoute
+  '/marca/nueva': typeof MarcaNuevaRoute
+  '/marca': typeof MarcaIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/formato': typeof FormatoRoute
+  '/marca/nueva': typeof MarcaNuevaRoute
+  '/marca/': typeof MarcaIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/formato'
+  fullPaths: '/' | '/about' | '/formato' | '/marca/nueva' | '/marca/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/formato'
-  id: '__root__' | '/' | '/about' | '/formato'
+  to: '/' | '/about' | '/formato' | '/marca/nueva' | '/marca'
+  id: '__root__' | '/' | '/about' | '/formato' | '/marca/nueva' | '/marca/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   FormatoRoute: typeof FormatoRoute
+  MarcaNuevaRoute: typeof MarcaNuevaRoute
+  MarcaIndexRoute: typeof MarcaIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +102,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FormatoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/marca/': {
+      id: '/marca/'
+      path: '/marca'
+      fullPath: '/marca/'
+      preLoaderRoute: typeof MarcaIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/marca/nueva': {
+      id: '/marca/nueva'
+      path: '/marca/nueva'
+      fullPath: '/marca/nueva'
+      preLoaderRoute: typeof MarcaNuevaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +123,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   FormatoRoute: FormatoRoute,
+  MarcaNuevaRoute: MarcaNuevaRoute,
+  MarcaIndexRoute: MarcaIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
