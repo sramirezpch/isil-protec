@@ -25,6 +25,10 @@ export default function Sidebar() {
           <span aria-hidden="true">📐</span>
           Formatos
         </Link>
+        <Link to="/marca" className={itemClass}>
+          <span aria-hidden="true">🏷️</span>
+          Marcas
+        </Link>
       </nav>
     </aside>
   )
