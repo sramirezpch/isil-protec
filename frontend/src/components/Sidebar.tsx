@@ -21,6 +21,10 @@ export default function Sidebar() {
         <p className="m-0 px-2.5 pb-2 pt-3 text-[9px] font-bold uppercase tracking-wide text-slate-500">
           Catálogos
         </p>
+        <Link to="/franquicia" className={itemClass}>
+          <span aria-hidden="true">🏢</span>
+          Franquicias
+        </Link>
         <Link to="/formato" className={itemClass}>
           <span aria-hidden="true">📐</span>
           Formatos

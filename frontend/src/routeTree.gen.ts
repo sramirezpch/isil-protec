@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as FormatoRouteImport } from './routes/formato'
+import { Route as FranquiciaRouteImport } from './routes/franquicia'
 import { Route as MarcaIndexRouteImport } from './routes/marca/index'
 import { Route as MarcaNuevaRouteImport } from './routes/marca/nueva'
 
@@ -30,6 +31,11 @@ const FormatoRoute = FormatoRouteImport.update({
   path: '/formato',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FranquiciaRoute = FranquiciaRouteImport.update({
+  id: '/franquicia',
+  path: '/franquicia',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MarcaIndexRoute = MarcaIndexRouteImport.update({
   id: '/marca/',
   path: '/marca/',
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/formato': typeof FormatoRoute
+  '/franquicia': typeof FranquiciaRoute
   '/marca/nueva': typeof MarcaNuevaRoute
   '/marca/': typeof MarcaIndexRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/formato': typeof FormatoRoute
+  '/franquicia': typeof FranquiciaRoute
   '/marca/nueva': typeof MarcaNuevaRoute
   '/marca': typeof MarcaIndexRoute
 }
@@ -60,21 +68,31 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/formato': typeof FormatoRoute
+  '/franquicia': typeof FranquiciaRoute
   '/marca/nueva': typeof MarcaNuevaRoute
   '/marca/': typeof MarcaIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/formato' | '/marca/nueva' | '/marca/'
+  fullPaths:
+    '/' | '/about' | '/formato' | '/franquicia' | '/marca/nueva' | '/marca/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/formato' | '/marca/nueva' | '/marca'
-  id: '__root__' | '/' | '/about' | '/formato' | '/marca/nueva' | '/marca/'
+  to: '/' | '/about' | '/formato' | '/franquicia' | '/marca/nueva' | '/marca'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/formato'
+    | '/franquicia'
+    | '/marca/nueva'
+    | '/marca/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   FormatoRoute: typeof FormatoRoute
+  FranquiciaRoute: typeof FranquiciaRoute
   MarcaNuevaRoute: typeof MarcaNuevaRoute
   MarcaIndexRoute: typeof MarcaIndexRoute
 }
@@ -102,6 +120,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FormatoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/franquicia': {
+      id: '/franquicia'
+      path: '/franquicia'
+      fullPath: '/franquicia'
+      preLoaderRoute: typeof FranquiciaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/marca/': {
       id: '/marca/'
       path: '/marca'
@@ -123,18 +148,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   FormatoRoute: FormatoRoute,
+  FranquiciaRoute: FranquiciaRoute,
   MarcaNuevaRoute: MarcaNuevaRoute,
   MarcaIndexRoute: MarcaIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
