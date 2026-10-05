@@ -52,3 +52,25 @@ export async function createBrand(name: string): Promise<void> {
     throw new Error(`Error al registrar la marca (${res.status})`)
   }
 }
+
+export type Franquicia = {
+  id: string
+  name: string
+  formato: string
+  active: boolean
+}
+
+// No franquicia endpoint yet: test data until the backend exposes one
+export const FRANQUICIAS_DE_PRUEBA: Franquicia[] = [
+  { id: 'FRANQ-001', name: 'Dragon Ball GT', formato: 'Anime', active: true },
+  { id: 'FRANQ-002', name: 'Marvel Legends', formato: 'Comic', active: true },
+  { id: 'FRANQ-003', name: 'Neon Genesis', formato: 'Anime', active: true },
+  { id: 'FRANQ-004', name: 'Stranger Things', formato: 'Serie', active: true },
+  { id: 'FRANQ-005', name: 'Jujutsu Kaisen', formato: 'Anime', active: true },
+  {
+    id: 'FRANQ-006',
+    name: 'Resident Evil',
+    formato: 'Videojuego',
+    active: false,
+  },
+]
