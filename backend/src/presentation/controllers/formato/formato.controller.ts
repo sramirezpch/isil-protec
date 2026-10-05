@@ -4,11 +4,12 @@ import { FormatoNameAlreadyExistsError, InvalidFormatoNameError } from '../../..
 import { toResponseDto } from '../../../utils';
 
 interface AddFormatoBody {
-  name?: unknown;
+  name: string;
+  active: boolean;
 }
 
 export class FormatoController {
-  constructor(private readonly formatoService: FormatoService) {}
+  constructor(private readonly formatoService: FormatoService) { }
 
   getAllFormatos = async (_req: Request, res: Response): Promise<Response> => {
     try {
@@ -26,11 +27,13 @@ export class FormatoController {
   };
 
   addFormato = async (
-    req: Request<Record<string, never>, unknown, AddFormatoBody>,
+    req: Request<null, unknown, AddFormatoBody>,
     res: Response,
   ): Promise<Response> => {
     try {
-      const formato = await this.formatoService.addFormato(req.body?.name);
+      const { name, active } = req.body;
+
+      const formato = await this.formatoService.addFormato({ name, active });
       return res.status(201).json(toResponseDto(true, { message: 'Formato creado exitosamente' }));
     } catch (error) {
       if (error instanceof InvalidFormatoNameError) {

@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { DatabaseError } from 'pg';
-import type { IFormatoRepository } from '../../../application/port/formato.repository';
+import type { AddFormatoInput, IFormatoRepository } from '../../../application/port/formato.repository';
 import type { Formato } from '../../../domain/entities/formato.entity';
 import { FormatoNameAlreadyExistsError } from '../../../domain/errors/formato.errors';
 import { db } from '../db/connection';
@@ -14,7 +14,7 @@ export class FormatoRepository implements IFormatoRepository {
     return formatos.map(toDomain);
   }
 
-  async addFormato(name: string): Promise<Formato> {
+  async addFormato({ name, active }: AddFormatoInput): Promise<Formato> {
     const [existingFormato] = await db
       .select({ id: formatoTable.id })
       .from(formatoTable)
@@ -27,7 +27,7 @@ export class FormatoRepository implements IFormatoRepository {
     try {
       const [formato] = await db
         .insert(formatoTable)
-        .values({ name })
+        .values({ name, active })
         .returning();
 
       return toDomain(formato);
