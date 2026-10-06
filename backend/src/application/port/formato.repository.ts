@@ -5,7 +5,14 @@ export interface AddFormatoInput {
   active: boolean;
 }
 
+export interface UpdateFormatoInput {
+  id: string;
+  name: string;
+  active: boolean;
+}
+
 export interface IFormatoRepository {
   getAllFormatos(): Promise<Formato[]>;
   addFormato(input: AddFormatoInput): Promise<Formato>;
+  updateFormato(input: UpdateFormatoInput): Promise<Formato>;
 }

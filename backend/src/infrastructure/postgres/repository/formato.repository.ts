@@ -1,13 +1,14 @@
 import { sql } from 'drizzle-orm';
 import { DatabaseError } from 'pg';
-import type { AddFormatoInput, IFormatoRepository } from '../../../application/port/formato.repository';
+import type { AddFormatoInput, IFormatoRepository, UpdateFormatoInput } from '../../../application/port/formato.repository';
 import type { Formato } from '../../../domain/entities/formato.entity';
-import { FormatoNameAlreadyExistsError } from '../../../domain/errors/formato.errors';
+import { FormatoNameAlreadyExistsError, FormatoUpdateError } from '../../../domain/errors/formato.errors';
 import { db } from '../db/connection';
 import { formatoTable } from '../db/schema/formato';
 import { toDomain } from '../mappers/formato.mapper';
 
 export class FormatoRepository implements IFormatoRepository {
+
   async getAllFormatos() {
     const formatos = await db.select().from(formatoTable);
 
@@ -41,6 +42,29 @@ export class FormatoRepository implements IFormatoRepository {
       }
 
       throw error;
+    }
+  }
+
+  async updateFormato({ id, name, active }: UpdateFormatoInput): Promise<Formato> {
+    const [existingFormato] = await db
+      .select({ id: formatoTable.id })
+      .from(formatoTable)
+      .where(sql`lower(trim(${formatoTable.name})) = lower(trim(${name})) AND ${formatoTable.id} != ${id}`);
+
+    if (existingFormato) {
+      throw new FormatoNameAlreadyExistsError();
+    }
+
+    try {
+      const [formato] = await db
+        .update(formatoTable)
+        .set({ name, active })
+        .where(sql`${formatoTable.id} = ${id}`)
+        .returning();
+
+      return toDomain(formato);
+    } catch (error) {
+      throw new FormatoUpdateError();
     }
   }
 }

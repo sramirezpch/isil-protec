@@ -6,6 +6,12 @@ interface AddFormatoInput {
   active: boolean;
 }
 
+interface UpdateFormatoInput {
+  id: string;
+  name: string;
+  active: boolean;
+}
+
 export class FormatoService {
   constructor(private readonly formatoRepository: IFormatoRepository) { }
 
@@ -21,5 +27,15 @@ export class FormatoService {
     }
 
     return await this.formatoRepository.addFormato({ name, active });
+  }
+
+  async updateFormato({ id, name, active }: UpdateFormatoInput) {
+    const normalizedName = name.trim();
+
+    if (!normalizedName || Array.from(normalizedName).length > 255) {
+      throw new InvalidFormatoNameError();
+    }
+
+    return await this.formatoRepository.updateFormato({ id, name, active });
   }
 }

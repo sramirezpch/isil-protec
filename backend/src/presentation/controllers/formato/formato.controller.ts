@@ -1,12 +1,8 @@
 import type { Request, Response } from 'express';
 import type { FormatoService } from '../../../application/services/formato.service';
-import { FormatoNameAlreadyExistsError, InvalidFormatoNameError } from '../../../domain/errors/formato.errors';
+import { FormatoNameAlreadyExistsError, InvalidFormatoNameError, FormatoUpdateError, FormatoNotFoundError} from '../../../domain/errors/formato.errors';
 import { toResponseDto } from '../../../utils';
-
-interface AddFormatoBody {
-  name: string;
-  active: boolean;
-}
+import type { AddFormatoBody, UpdateFormatoBody } from './utils';
 
 export class FormatoController {
   constructor(private readonly formatoService: FormatoService) { }
@@ -56,4 +52,44 @@ export class FormatoController {
       );
     }
   };
+
+  updateFormato = async (
+  req: Request<{ id: string }, unknown, UpdateFormatoBody>,
+  res: Response,
+): Promise<Response> => {
+  try {
+    const { id } = req.params;
+    const { name, active } = req.body;
+
+    if (!id || typeof id !== 'string') {
+      return res.status(400).json(toResponseDto(false, { message: 'ID de formato inválido' }));
+    }
+
+    await this.formatoService.updateFormato({ id, name, active });
+    return res.status(200).json(toResponseDto(true, { message: 'Formato actualizado con éxito' }));
+    
+  } catch (error) {
+    if (
+      error instanceof InvalidFormatoNameError || 
+      error instanceof FormatoNameAlreadyExistsError
+    ) {
+      return res.status(400).json(
+        toResponseDto(false, { message: error.message })
+      );
+    }
+
+    if (error instanceof FormatoNotFoundError) {
+      return res.status(404).json(
+        toResponseDto(false, { message: error.message })
+      );
+    }
+
+    console.error('Error al actualizar formato:', error);
+    return res.status(500).json(
+      toResponseDto(false, {
+        message: 'Ocurrió un error al actualizar el formato',
+      }),
+    );
+  }
+};
 }

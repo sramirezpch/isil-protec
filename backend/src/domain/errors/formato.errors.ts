@@ -11,3 +11,17 @@ export class InvalidFormatoNameError extends Error {
     this.name = 'InvalidFormatoNameError';
   }
 }
+
+export class FormatoNotFoundError extends Error {
+  constructor() {
+    super('No se encontró el formato especificado');
+    this.name = 'FormatoNotFoundError';
+  }
+}
+
+export class FormatoUpdateError extends Error {
+  constructor() {
+    super('Ocurrió un error al actualizar el formato');
+    this.name = 'FormatoUpdateError';
+  }
+}
