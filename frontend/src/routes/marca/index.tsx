@@ -1,7 +1,8 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
+import CatalogFormModal from '../../components/CatalogFormModal'
 import CatalogTable from '../../components/CatalogTable'
-import { getBrands } from '../../lib/api'
+import { type Brand, type CatalogData, getBrands } from '../../lib/api'
 
 export const Route = createFileRoute('/marca/')({
   loader: () => getBrands(),
@@ -23,6 +24,18 @@ export const Route = createFileRoute('/marca/')({
 function RouteComponent() {
   const brands = Route.useLoaderData()
   const [query, setQuery] = useState('')
+  const [creating, setCreating] = useState(false)
+  const [editing, setEditing] = useState<Brand | null>(null)
+
+  // TODO: call POST /brand once the create endpoint is merged
+  const crearMarca = async (_brand: CatalogData) => {
+    setCreating(false)
+  }
+
+  // TODO: call PATCH /brand/:id once the update endpoint persists changes
+  const editarMarca = async (_brand: CatalogData) => {
+    setEditing(null)
+  }
 
   const term = query.trim().toLowerCase()
   const filtered = brands.filter(
@@ -36,12 +49,13 @@ function RouteComponent() {
         <h1 className="m-0 text-3xl font-bold text-slate-900">
           Listado de Marcas
         </h1>
-        <Link
-          to="/marca/nueva"
-          className="rounded-md bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white no-underline shadow-sm transition hover:bg-indigo-600 hover:text-white"
+        <button
+          type="button"
+          onClick={() => setCreating(true)}
+          className="cursor-pointer rounded-md border-0 bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-600"
         >
           + Nueva Marca
-        </Link>
+        </button>
       </div>
 
       <input
@@ -54,9 +68,31 @@ function RouteComponent() {
 
       <CatalogTable
         items={filtered}
-        idLabel="ID Marca"
         emptyMessage="No se encontraron marcas."
+        onEdit={setEditing}
       />
+
+      {creating && (
+        <CatalogFormModal
+          title="Registrar Nueva Marca"
+          entityLabel="Marca"
+          submitLabel="Confirmar Registro"
+          onClose={() => setCreating(false)}
+          onConfirm={crearMarca}
+        />
+      )}
+
+      {editing && (
+        <CatalogFormModal
+          key={editing.id}
+          title="Editar Marca"
+          entityLabel="Marca"
+          submitLabel="Guardar Cambios"
+          initial={{ name: editing.name, active: editing.active }}
+          onClose={() => setEditing(null)}
+          onConfirm={editarMarca}
+        />
+      )}
     </main>
   )
 }

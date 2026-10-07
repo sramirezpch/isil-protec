@@ -4,19 +4,23 @@ type CatalogItem = {
   active: boolean
 }
 
-type Props = {
-  items: CatalogItem[]
-  idLabel: string
+type Props<T extends CatalogItem> = {
+  items: T[]
   emptyMessage: string
+  onEdit?: (item: T) => void
 }
 
-export default function CatalogTable({ items, idLabel, emptyMessage }: Props) {
+export default function CatalogTable<T extends CatalogItem>({
+  items,
+  emptyMessage,
+  onEdit,
+}: Props<T>) {
   return (
     <div className="overflow-x-auto rounded-md border border-slate-200 bg-white shadow-sm">
       <table className="w-full border-collapse text-left">
         <thead>
           <tr className="bg-[#111827] text-xs font-semibold uppercase tracking-wide text-white">
-            <th className="px-4 py-3.5 font-semibold">{idLabel}</th>
+            <th className="px-4 py-3.5 font-semibold">ID</th>
             <th className="px-4 py-3.5 font-semibold">Nombre</th>
             <th className="px-4 py-3.5 font-semibold">Estado</th>
             <th className="w-48 px-4 py-3.5 font-semibold">Acciones</th>
@@ -47,6 +51,7 @@ export default function CatalogTable({ items, idLabel, emptyMessage }: Props) {
                 <div className="flex items-center gap-5">
                   <button
                     type="button"
+                    onClick={() => onEdit?.(item)}
                     className="cursor-pointer border-0 bg-transparent p-0 text-indigo-500 hover:text-indigo-700"
                   >
                     ✏️ Editar

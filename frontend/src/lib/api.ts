@@ -24,6 +24,35 @@ export async function getFormatos(): Promise<Formato[]> {
   return body.data.formatos
 }
 
+export type CatalogData = {
+  name: string
+  active: boolean
+}
+
+// Sends a JSON body and throws the backend's message on 4xx/5xx
+async function sendJson(
+  method: 'POST',
+  path: string,
+  data: unknown,
+  fallbackError: string,
+): Promise<void> {
+  const res = await fetch(`${API_URL}${path}`, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    const body: ApiResponse<{ message?: string }> | null = await res
+      .json()
+      .catch(() => null)
+    throw new Error(body?.data.message ?? `${fallbackError} (${res.status})`)
+  }
+}
+
+export function createFormato(formato: CatalogData): Promise<void> {
+  return sendJson('POST', '/formato', formato, 'Error al registrar el formato')
+}
+
 export type Brand = {
   id: string
   name: string
@@ -40,17 +69,6 @@ export async function getBrands(): Promise<Brand[]> {
   }
   const body: ApiResponse<{ brands: Brand[] }> = await res.json()
   return body.data.brands
-}
-
-export async function createBrand(name: string): Promise<void> {
-  const res = await fetch(`${API_URL}/brand`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name }),
-  })
-  if (!res.ok) {
-    throw new Error(`Error al registrar la marca (${res.status})`)
-  }
 }
 
 export type Franquicia = {
