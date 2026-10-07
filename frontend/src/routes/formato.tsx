@@ -1,8 +1,13 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { useState } from 'react'
+import CatalogFormModal from '../components/CatalogFormModal'
 import CatalogTable from '../components/CatalogTable'
-import NuevoFormatoModal from '../components/NuevoFormatoModal'
-import { type Formato, getFormatos } from '../lib/api'
+import {
+  type CatalogData,
+  createFormato,
+  type Formato,
+  getFormatos,
+} from '../lib/api'
 
 export const Route = createFileRoute('/formato')({
   loader: () => getFormatos(),
@@ -22,26 +27,22 @@ export const Route = createFileRoute('/formato')({
 })
 
 function RouteComponent() {
-  const loaded = Route.useLoaderData()
-  const [formatos, setFormatos] = useState<Formato[]>(loaded)
+  const formatos = Route.useLoaderData()
+  const router = useRouter()
   const [query, setQuery] = useState('')
-  const [modalOpen, setModalOpen] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [editing, setEditing] = useState<Formato | null>(null)
 
-  // No POST endpoint yet: new formatos only live in local state
-  const crearFormato = (name: string) => {
-    const now = new Date().toISOString()
-    setFormatos([
-      ...formatos,
-      {
-        id: crypto.randomUUID(),
-        name,
-        active: true,
-        createdAt: now,
-        updatedAt: now,
-        deletedAt: null,
-      },
-    ])
-    setModalOpen(false)
+  // The POST response doesn't include the new formato, so reload the list
+  const crearFormato = async (formato: CatalogData) => {
+    await createFormato(formato)
+    await router.invalidate()
+    setCreating(false)
+  }
+
+  // TODO: call PATCH /formato/:id once the update endpoint is merged
+  const editarFormato = async (_formato: CatalogData) => {
+    setEditing(null)
   }
 
   const term = query.trim().toLowerCase()
@@ -58,7 +59,7 @@ function RouteComponent() {
         </h1>
         <button
           type="button"
-          onClick={() => setModalOpen(true)}
+          onClick={() => setCreating(true)}
           className="cursor-pointer rounded-md border-0 bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-600"
         >
           + Nuevo Formato
@@ -75,15 +76,31 @@ function RouteComponent() {
 
       <CatalogTable
         items={filtered}
-        idLabel="ID Formato"
         emptyMessage="No se encontraron formatos."
+        onEdit={setEditing}
       />
 
-      <NuevoFormatoModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onConfirm={crearFormato}
-      />
+      {creating && (
+        <CatalogFormModal
+          title="Nuevo Formato"
+          entityLabel="Formato"
+          submitLabel="Confirmar Registro"
+          onClose={() => setCreating(false)}
+          onConfirm={crearFormato}
+        />
+      )}
+
+      {editing && (
+        <CatalogFormModal
+          key={editing.id}
+          title="Editar Formato"
+          entityLabel="Formato"
+          submitLabel="Guardar Cambios"
+          initial={{ name: editing.name, active: editing.active }}
+          onClose={() => setEditing(null)}
+          onConfirm={editarFormato}
+        />
+      )}
     </main>
   )
 }
