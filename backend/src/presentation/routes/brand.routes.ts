@@ -11,6 +11,8 @@ export class BrandRouter {
 
   private initRoutes(): void {
     this.router.get('/', this.brandController.getAll);
+    this.router.post('/', this.brandController.create);
     this.router.patch('/:id', this.brandController.updateById);
+    this.router.delete("/:id", this.brandController.delete)
   }
 }

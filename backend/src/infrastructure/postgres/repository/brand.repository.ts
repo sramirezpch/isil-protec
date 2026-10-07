@@ -1,4 +1,6 @@
+import { eq } from 'drizzle-orm';
 import type {
+  CreateBrandData,
   IBrandRepository,
   UpdateBrandData,
 } from '../../../application/port/brand.repository';
@@ -13,7 +15,16 @@ export class BrandRepository implements IBrandRepository {
 
     return brands.map(toDomain);
   }
+
   async update(id: string, data: UpdateBrandData): Promise<void> {
-    console.log(`Updating brand ${id}`, data);
+    await db.update(brandTable).set(data).where(eq(brandTable.id, id));
+  }
+
+  async create(data: CreateBrandData): Promise<void> {
+    await db.insert(brandTable).values(data);
+  }
+
+  async delete(id: string): Promise<void> {
+    await db.update(brandTable).set({ active: false }).where(eq(brandTable.id, id));
   }
 }
