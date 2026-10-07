@@ -7,8 +7,8 @@ export interface AddFormatoInput {
 
 export interface UpdateFormatoInput {
   id: string;
-  name: string;
-  active: boolean;
+  name?: string;
+  active?: boolean;
 }
 
 export interface IFormatoRepository {

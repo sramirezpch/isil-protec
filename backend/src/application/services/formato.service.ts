@@ -8,8 +8,8 @@ interface AddFormatoInput {
 
 interface UpdateFormatoInput {
   id: string;
-  name: string;
-  active: boolean;
+  name?: string;
+  active?: boolean;
 }
 
 export class FormatoService {
@@ -29,11 +29,15 @@ export class FormatoService {
     return await this.formatoRepository.addFormato({ name, active });
   }
 
-  async updateFormato({ id, name, active }: UpdateFormatoInput) {
-    const normalizedName = name.trim();
+  async updateFormato(input: UpdateFormatoInput) {
+    const { id, name, active } = input;
 
-    if (!normalizedName || Array.from(normalizedName).length > 255) {
-      throw new InvalidFormatoNameError();
+    if (name !== undefined) {
+      const normalizedName = name.trim();
+
+      if (!normalizedName || Array.from(normalizedName).length > 255) {
+        throw new InvalidFormatoNameError();
+      }
     }
 
     return await this.formatoRepository.updateFormato({ id, name, active });

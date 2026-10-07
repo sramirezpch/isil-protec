@@ -1,10 +1,13 @@
-export interface AddFormatoBody {
+export type AddFormatoBody = {
   name: string;
   active: boolean;
 }
 
-export interface UpdateFormatoBody {
-  id: string;
+export type UpdateFormatoBody = Partial<{
   name: string;
   active: boolean;
-}
+}>;
+
+export type UpdateFormatoParams = {
+  id: string;
+};
