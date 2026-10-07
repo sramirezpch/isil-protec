@@ -29,17 +29,19 @@ export type CatalogData = {
   active: boolean
 }
 
-// Sends a JSON body and throws the backend's message on 4xx/5xx
+// Sends an optional JSON body and throws the backend's message on 4xx/5xx
 async function sendJson(
-  method: 'POST',
+  method: 'POST' | 'PATCH' | 'DELETE',
   path: string,
   data: unknown,
   fallbackError: string,
 ): Promise<void> {
   const res = await fetch(`${API_URL}${path}`, {
     method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    ...(data !== undefined && {
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
   })
   if (!res.ok) {
     const body: ApiResponse<{ message?: string }> | null = await res
@@ -69,6 +71,22 @@ export async function getBrands(): Promise<Brand[]> {
   }
   const body: ApiResponse<{ brands: Brand[] }> = await res.json()
   return body.data.brands
+}
+
+export function createBrand(brand: CatalogData): Promise<void> {
+  return sendJson('POST', '/brand', brand, 'Error al registrar la marca')
+}
+
+export function updateBrand(
+  id: string,
+  changes: Partial<CatalogData>,
+): Promise<void> {
+  return sendJson('PATCH', `/brand/${id}`, changes, 'Error al actualizar la marca')
+}
+
+// The backend soft-deletes: the brand stays listed as inactive
+export function deleteBrand(id: string): Promise<void> {
+  return sendJson('DELETE', `/brand/${id}`, undefined, 'Error al eliminar la marca')
 }
 
 export type Franquicia = {

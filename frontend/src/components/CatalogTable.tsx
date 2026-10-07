@@ -8,12 +8,14 @@ type Props<T extends CatalogItem> = {
   items: T[]
   emptyMessage: string
   onEdit?: (item: T) => void
+  onDelete?: (item: T) => void
 }
 
 export default function CatalogTable<T extends CatalogItem>({
   items,
   emptyMessage,
   onEdit,
+  onDelete,
 }: Props<T>) {
   return (
     <div className="overflow-x-auto rounded-md border border-slate-200 bg-white shadow-sm">
@@ -58,6 +60,7 @@ export default function CatalogTable<T extends CatalogItem>({
                   </button>
                   <button
                     type="button"
+                    onClick={() => onDelete?.(item)}
                     className="cursor-pointer border-0 bg-transparent p-0 text-red-500 hover:text-red-700"
                   >
                     🗑️ Eliminar
