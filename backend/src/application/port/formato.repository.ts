@@ -1,18 +1,14 @@
 import type { Formato } from '../../domain/entities/formato.entity';
 
-export interface AddFormatoInput {
+export type UpdateFormatoData = Partial<Pick<Formato, 'name' | 'active'>>;
+
+export type AddFormatoInput = {
   name: string;
   active: boolean;
 }
 
-export interface UpdateFormatoInput {
-  id: string;
-  name?: string;
-  active?: boolean;
-}
-
 export interface IFormatoRepository {
-  getAllFormatos(): Promise<Formato[]>;
-  addFormato(input: AddFormatoInput): Promise<Formato>;
-  updateFormato(input: UpdateFormatoInput): Promise<Formato>;
+  findAll(): Promise<Formato[]>;
+  create(data: AddFormatoInput): Promise<void>;
+  update(id: string, data: UpdateFormatoData): Promise<void>;
 }

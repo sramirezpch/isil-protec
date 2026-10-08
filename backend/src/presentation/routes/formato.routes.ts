@@ -10,8 +10,8 @@ export class FormatoRouter {
   }
 
   private initRoutes(): void {
-    this.router.get('/', this.formatoController.getAllFormatos);
-    this.router.post('/', this.formatoController.addFormato);
-    this.router.patch('/:id', this.formatoController.updateFormato);
+    this.router.get('/', this.formatoController.findAll);
+    this.router.post('/', this.formatoController.create);
+    this.router.patch('/:id', this.formatoController.update);
   }
 }

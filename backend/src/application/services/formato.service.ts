@@ -1,12 +1,12 @@
 import { InvalidFormatoNameError } from '../../domain/errors/formato.errors';
-import type { IFormatoRepository } from '../port/formato.repository';
+import type { IFormatoRepository, UpdateFormatoData } from '../port/formato.repository';
 
-interface AddFormatoInput {
+export interface AddFormatoInput {
   name: string;
   active: boolean;
 }
 
-interface UpdateFormatoInput {
+export interface UpdateFormatoInput {
   id: string;
   name?: string;
   active?: boolean;
@@ -15,31 +15,22 @@ interface UpdateFormatoInput {
 export class FormatoService {
   constructor(private readonly formatoRepository: IFormatoRepository) { }
 
-  async getAllFormatos() {
-    return await this.formatoRepository.getAllFormatos();
+  async findAll() {
+    return await this.formatoRepository.findAll();
   }
 
-  async addFormato({ name, active }: AddFormatoInput) {
+  async create({ name, active }: AddFormatoInput) {
     const normalizedName = name.trim();
 
     if (!normalizedName || Array.from(normalizedName).length > 255) {
       throw new InvalidFormatoNameError();
     }
 
-    return await this.formatoRepository.addFormato({ name, active });
+    return await this.formatoRepository.create({ name, active });
   }
 
-  async updateFormato(input: UpdateFormatoInput) {
-    const { id, name, active } = input;
-
-    if (name !== undefined) {
-      const normalizedName = name.trim();
-
-      if (!normalizedName || Array.from(normalizedName).length > 255) {
-        throw new InvalidFormatoNameError();
-      }
-    }
-
-    return await this.formatoRepository.updateFormato({ id, name, active });
+  async update(input: UpdateFormatoInput) {
+    const { id, ...data } = input;
+    return await this.formatoRepository.update(id, data);
   }
 }

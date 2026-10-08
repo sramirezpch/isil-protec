@@ -1,5 +1,5 @@
 import type { Formato } from '../../../domain/entities/formato.entity';
-import type { FormatoModel, NewFormatoModel } from '../db/schema/formato';
+import type { FormatoModel } from '../db/schema/formato';
 
 export const toDomain = (row: FormatoModel): Formato => ({
   id: row.id,
@@ -10,6 +10,11 @@ export const toDomain = (row: FormatoModel): Formato => ({
   deletedAt: row.deletedAt,
 });
 
-export const toPersistence = (domain: Formato): NewFormatoModel => ({
+export const toPersistence = (domain: Formato): FormatoModel => ({
+  id: domain.id,
+  active: domain.active,
+  createdAt: domain.createdAt,
+  deletedAt: domain.deletedAt,
   name: domain.name,
+  updatedAt: domain.updatedAt,
 });

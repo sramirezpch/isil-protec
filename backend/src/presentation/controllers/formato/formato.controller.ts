@@ -1,15 +1,15 @@
 import type { Request, Response } from 'express';
 import type { FormatoService } from '../../../application/services/formato.service';
 import { FormatoNameAlreadyExistsError, InvalidFormatoNameError, FormatoUpdateError, FormatoNotFoundError } from '../../../domain/errors/formato.errors';
-import { toResponseDto } from '../../../utils';
+import { DtoResponse, toResponseDto } from '../../../utils';
 import type { AddFormatoBody, UpdateFormatoBody, UpdateFormatoParams } from './utils';
 
 export class FormatoController {
   constructor(private readonly formatoService: FormatoService) { }
 
-  getAllFormatos = async (_req: Request, res: Response): Promise<Response> => {
+  findAll = async (_req: Request, res: Response): Promise<Response> => {
     try {
-      const formatos = await this.formatoService.getAllFormatos();
+      const formatos = await this.formatoService.findAll();
       return res.status(200).json(toResponseDto(true, { formatos }));
     } catch (error) {
       console.log('Error al obtener formatos:', error);
@@ -22,14 +22,14 @@ export class FormatoController {
     }
   };
 
-  addFormato = async (
+  create = async (
     req: Request<null, unknown, AddFormatoBody>,
     res: Response,
   ): Promise<Response> => {
     try {
       const { name, active } = req.body;
 
-      const formato = await this.formatoService.addFormato({ name, active });
+      const formato = await this.formatoService.create({ name, active });
       return res.status(201).json(toResponseDto(true, { message: 'Formato creado exitosamente' }));
     } catch (error) {
       if (error instanceof InvalidFormatoNameError) {
@@ -53,15 +53,15 @@ export class FormatoController {
     }
   };
 
-  updateFormato = async (
-    req: Request<UpdateFormatoParams, unknown, UpdateFormatoBody>,
+  update = async (
+    req: Request<UpdateFormatoParams, DtoResponse, UpdateFormatoBody>,
     res: Response,
   ): Promise<Response> => {
     try {
       const id = req.params.id;
       const { name, active } = req.body;
 
-      await this.formatoService.updateFormato({ id, name, active });
+      await this.formatoService.update({ id, name, active });
       return res.status(200).json(toResponseDto(true, { message: 'Formato actualizado con éxito' }));
 
     } catch (error) {
