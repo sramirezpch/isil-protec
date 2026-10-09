@@ -11,3 +11,7 @@ export type UpdateFormatoBody = Partial<{
 export type UpdateFormatoParams = {
   id: string;
 };
+
+export type DeleteFormatoParams = {
+  id: string;
+};

@@ -11,4 +11,5 @@ export interface IFormatoRepository {
   findAll(): Promise<Formato[]>;
   create(data: AddFormatoInput): Promise<void>;
   update(id: string, data: UpdateFormatoData): Promise<void>;
+  delete(id: string): Promise<void>;
 }

@@ -22,4 +22,8 @@ export class FormatoRepository implements IFormatoRepository {
   async update(id: string, data: UpdateFormatoData): Promise<void> {
     await db.update(formatoTable).set(data).where(eq(formatoTable.id, id));
   }
+
+  async delete(id: string): Promise<void> {
+    await db.update(formatoTable).set({ active: false }).where(eq(formatoTable.id, id));
+  }
 }

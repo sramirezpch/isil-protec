@@ -20,17 +20,15 @@ export class FormatoService {
   }
 
   async create({ name, active }: AddFormatoInput) {
-    const normalizedName = name.trim();
-
-    if (!normalizedName || Array.from(normalizedName).length > 255) {
-      throw new InvalidFormatoNameError();
-    }
-
     return await this.formatoRepository.create({ name, active });
   }
 
   async update(input: UpdateFormatoInput) {
     const { id, ...data } = input;
     return await this.formatoRepository.update(id, data);
+  }
+
+  async delete(id: string) {
+    return await this.formatoRepository.delete(id);
   }
 }
