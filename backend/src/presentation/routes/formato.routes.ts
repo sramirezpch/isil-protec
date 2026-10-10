@@ -13,5 +13,6 @@ export class FormatoRouter {
     this.router.get('/', this.formatoController.findAll);
     this.router.post('/', this.formatoController.create);
     this.router.patch('/:id', this.formatoController.update);
+    this.router.delete('/:id', this.formatoController.delete);
   }
 }
