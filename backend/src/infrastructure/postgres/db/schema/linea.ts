@@ -9,7 +9,7 @@ export const lineaTable = pgTable('linea', {
     .defaultRandom()
     .$defaultFn(() => uuidv7()),
   name: varchar({ length: 255 }).notNull(),
-  idmarca: uuid().notNull(),
+  brandId: uuid().notNull(),
   active: boolean().notNull().default(true),
   ...auditColumns,
 }, (table) => [

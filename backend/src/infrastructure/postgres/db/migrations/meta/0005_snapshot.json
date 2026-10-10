@@ -143,8 +143,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "idmarca": {
-          "name": "idmarca",
+        "brandId": {
+          "name": "brandId",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true

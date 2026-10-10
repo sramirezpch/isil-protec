@@ -1,12 +1,12 @@
-export type AddLineaBody = {
+export type CreateLineaBody = {
   name: string;
-  idmarca: string;
+  brandId: string;
   active: boolean;
 }
 
 export type UpdateLineaBody = Partial<{
   name: string;
-  idmarca: string;
+  brandId: string;
   active: boolean;
 }>;
 

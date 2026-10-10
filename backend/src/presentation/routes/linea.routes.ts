@@ -11,5 +11,8 @@ export class LineaRouter {
 
   private initRoutes(): void {
     this.router.get('/', this.lineaController.findAll);
+    this.router.post('/', this.lineaController.create);
+    this.router.patch('/:id', this.lineaController.update);
+    this.router.delete('/:id', this.lineaController.delete);
   }
 }

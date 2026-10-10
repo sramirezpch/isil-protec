@@ -1,7 +1,7 @@
 export interface Linea {
   id: string;
   name: string;
-  idmarca: string;
+  brandId: string;
   active: boolean;
   createdAt: Date;
   updatedAt: Date;

@@ -4,7 +4,7 @@ import type { LineaModel } from "../db/schema/linea";
 export const toDomain = (row: LineaModel): Linea => ({
   id: row.id,
   name: row.name,
-  idmarca: row.idmarca,
+  brandId: row.brandId,
   active: row.active,
   createdAt: row.createdAt,
   updatedAt: row.updatedAt,
@@ -14,7 +14,7 @@ export const toDomain = (row: LineaModel): Linea => ({
 export const toPersistence = (domain: Linea): LineaModel => ({
   id: domain.id,
   name: domain.name,
-  idmarca: domain.idmarca,
+  brandId: domain.brandId,
   active: domain.active,
   createdAt: domain.createdAt,
   updatedAt: domain.updatedAt,
