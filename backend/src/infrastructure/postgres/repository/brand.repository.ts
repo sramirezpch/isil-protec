@@ -25,6 +25,9 @@ export class BrandRepository implements IBrandRepository {
   }
 
   async delete(id: string): Promise<void> {
-    await db.update(brandTable).set({ active: false }).where(eq(brandTable.id, id));
+    await db
+      .update(brandTable)
+      .set({ active: false })
+      .where(eq(brandTable.id, id));
   }
 }

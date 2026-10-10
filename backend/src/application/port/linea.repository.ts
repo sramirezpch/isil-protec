@@ -1,6 +1,8 @@
 import type { Linea } from '../../domain/entities/linea.entity';
 
-export type UpdateLineaData = Partial<Pick<Linea, 'name' | 'brandId' | 'active'>>;
+export type UpdateLineaData = Partial<
+  Pick<Linea, 'name' | 'brandId' | 'active'>
+>;
 
 export type CreateLineaInput = {
   name: string;

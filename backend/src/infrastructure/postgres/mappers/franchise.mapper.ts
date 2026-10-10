@@ -5,6 +5,7 @@ export const toDomain = (row: FranchiseModel): Franchise => ({
   id: row.id,
   name: row.name,
   active: row.active,
+  formatoId: row.formatoId,
   createdAt: row.createdAt,
   updatedAt: row.updatedAt,
   deletedAt: row.deletedAt,
@@ -17,4 +18,5 @@ export const toPersistence = (domain: Franchise): FranchiseModel => ({
   deletedAt: domain.deletedAt,
   name: domain.name,
   updatedAt: domain.updatedAt,
+  formatoId: domain.formatoId,
 });

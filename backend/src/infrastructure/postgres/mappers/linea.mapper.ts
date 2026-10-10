@@ -1,5 +1,5 @@
-import type { Linea } from "../../../domain/entities/linea.entity";
-import type { LineaModel } from "../db/schema/linea";
+import type { Linea } from '../../../domain/entities/linea.entity';
+import type { LineaModel } from '../db/schema/linea';
 
 export const toDomain = (row: LineaModel): Linea => ({
   id: row.id,

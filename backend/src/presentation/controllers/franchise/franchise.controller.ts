@@ -5,11 +5,13 @@ import { toResponseDto } from '../../../utils';
 interface CreateFranchiseBody {
   name: string;
   active: boolean;
+  formatoId: string;
 }
 
 interface UpdateFranchiseBody {
   name?: string;
   active?: boolean;
+  formatoId?: string;
 }
 
 interface UpdateFranchiseParams {
@@ -21,7 +23,7 @@ interface DeleteFranchiseParams {
 }
 
 export class FranchiseController {
-  constructor(private readonly franchiseService: FranchiseService) { }
+  constructor(private readonly franchiseService: FranchiseService) {}
 
   getAll = async (_req: Request, res: Response): Promise<Response> => {
     try {
@@ -29,9 +31,11 @@ export class FranchiseController {
       return res.status(200).json(toResponseDto(true, { franchises }));
     } catch (error) {
       console.error('Error getting franchises:', error);
-      return res.status(500).json(
-        toResponseDto(false, { message: 'Error al obtener las franquicias' })
-      );
+      return res
+        .status(500)
+        .json(
+          toResponseDto(false, { message: 'Error al obtener las franquicias' }),
+        );
     }
   };
 
@@ -41,18 +45,29 @@ export class FranchiseController {
   ): Promise<Response> => {
     try {
       const id = req.params.id;
-      const { name, active } = req.body;
+      const { name, active, formatoId } = req.body;
 
-      await this.franchiseService.updateFranchise({ id, name, active });
+      await this.franchiseService.updateFranchise({
+        id,
+        name,
+        active,
+        formatoId,
+      });
 
-      return res.status(200).json(
-        toResponseDto(true, { message: 'Franquicia actualizada con exito' })
-      );
+      return res
+        .status(200)
+        .json(
+          toResponseDto(true, { message: 'Franquicia actualizada con exito' }),
+        );
     } catch (error) {
       console.error('Error updating franchise:', error);
-      return res.status(500).json(
-        toResponseDto(false, { message: 'Ocurrio un error al actualizar franquicia' })
-      );
+      return res
+        .status(500)
+        .json(
+          toResponseDto(false, {
+            message: 'Ocurrio un error al actualizar franquicia',
+          }),
+        );
     }
   };
 
@@ -61,18 +76,22 @@ export class FranchiseController {
     res: Response,
   ): Promise<Response> => {
     try {
-      const { name, active } = req.body;
+      const { name, active, formatoId } = req.body;
 
-      await this.franchiseService.create({ name, active });
+      await this.franchiseService.create({ name, active, formatoId });
 
-      return res.status(200).json(
-        toResponseDto(true, { message: 'Franquicia creada con exito' })
-      );
+      return res
+        .status(200)
+        .json(toResponseDto(true, { message: 'Franquicia creada con exito' }));
     } catch (error) {
       console.error('Error creating franchise:', error);
-      return res.status(500).json(
-        toResponseDto(false, { message: 'Ocurrio un error al crear franquicia' })
-      );
+      return res
+        .status(500)
+        .json(
+          toResponseDto(false, {
+            message: 'Ocurrio un error al crear franquicia',
+          }),
+        );
     }
   };
 
@@ -85,14 +104,20 @@ export class FranchiseController {
 
       await this.franchiseService.delete(id);
 
-      return res.status(200).json(
-        toResponseDto(true, { message: 'Franquicia eliminada con éxito' })
-      );
+      return res
+        .status(200)
+        .json(
+          toResponseDto(true, { message: 'Franquicia eliminada con éxito' }),
+        );
     } catch (error) {
       console.error('Error deleting franchise:', error);
-      return res.status(500).json(
-        toResponseDto(false, { message: 'Ocurrio un error al eliminar franquicia' })
-      );
+      return res
+        .status(500)
+        .json(
+          toResponseDto(false, {
+            message: 'Ocurrio un error al eliminar franquicia',
+          }),
+        );
     }
   };
 }

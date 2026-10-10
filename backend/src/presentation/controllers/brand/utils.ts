@@ -4,7 +4,7 @@ export type UpdateBrandParams = {
 
 export type DeleteBrandParams = {
   id: string;
-}
+};
 
 export type UpdateBrandBody = Partial<{
   name: string;
@@ -14,4 +14,4 @@ export type UpdateBrandBody = Partial<{
 export type CreateBrandBody = {
   name: string;
   active: boolean;
-}
+};

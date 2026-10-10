@@ -1,7 +1,11 @@
 import type { Request, Response } from 'express';
 import type { LineaService } from '../../../application/services/linea.service';
 import { type DtoResponse, toResponseDto } from '../../../utils';
-import type { CreateLineaBody, UpdateLineaBody, UpdateLineaParams } from './utils';
+import type {
+  CreateLineaBody,
+  UpdateLineaBody,
+  UpdateLineaParams,
+} from './utils';
 
 export class LineaController {
   constructor(private readonly lineaService: LineaService) {}

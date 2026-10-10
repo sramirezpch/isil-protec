@@ -5,7 +5,7 @@ export type UpdateFormatoData = Partial<Pick<Formato, 'name' | 'active'>>;
 export type AddFormatoInput = {
   name: string;
   active: boolean;
-}
+};
 
 export interface IFormatoRepository {
   findAll(): Promise<Formato[]>;

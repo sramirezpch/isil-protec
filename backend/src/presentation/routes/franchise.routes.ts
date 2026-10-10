@@ -13,6 +13,6 @@ export class FranchiseRouter {
     this.router.get('/', this.franchiseController.getAll);
     this.router.post('/', this.franchiseController.create);
     this.router.patch('/:id', this.franchiseController.updateById);
-    this.router.delete("/:id", this.franchiseController.delete)
+    this.router.delete('/:id', this.franchiseController.delete);
   }
 }

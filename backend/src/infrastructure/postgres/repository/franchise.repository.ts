@@ -22,6 +22,9 @@ export class FranchiseRepository implements IFranchiseRepository {
     await db.insert(franchiseTable).values(data);
   }
   async delete(id: string): Promise<void> {
-    await db.update(franchiseTable).set({ active: false }).where(eq(franchiseTable.id, id));
+    await db
+      .update(franchiseTable)
+      .set({ active: false })
+      .where(eq(franchiseTable.id, id));
   }
 }

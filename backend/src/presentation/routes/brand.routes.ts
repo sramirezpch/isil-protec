@@ -13,6 +13,6 @@ export class BrandRouter {
     this.router.get('/', this.brandController.getAll);
     this.router.post('/', this.brandController.create);
     this.router.patch('/:id', this.brandController.updateById);
-    this.router.delete("/:id", this.brandController.delete)
+    this.router.delete('/:id', this.brandController.delete);
   }
 }

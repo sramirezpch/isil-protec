@@ -31,6 +31,9 @@ export class LineaRepository implements ILineaRepository {
   }
 
   async delete(id: string): Promise<void> {
-    await db.update(lineaTable).set({ active: false }).where(eq(lineaTable.id, id));
+    await db
+      .update(lineaTable)
+      .set({ active: false })
+      .where(eq(lineaTable.id, id));
   }
 }

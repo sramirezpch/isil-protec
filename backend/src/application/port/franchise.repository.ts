@@ -1,11 +1,14 @@
 import type { Franchise } from '../../domain/entities/franchise.entity';
 
-export type UpdateFranchiseData = Partial<Pick<Franchise, 'name' | 'active'>>;
+export type UpdateFranchiseData = Partial<
+  Pick<Franchise, 'name' | 'active' | 'formatoId'>
+>;
 
 export type CreateFranchiseData = {
   name: string;
   active: boolean;
-}
+  formatoId: string;
+};
 
 export interface IFranchiseRepository {
   findAll(): Promise<Franchise[]>;

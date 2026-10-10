@@ -1,5 +1,8 @@
 import { InvalidFormatoNameError } from '../../domain/errors/formato.errors';
-import type { IFormatoRepository, UpdateFormatoData } from '../port/formato.repository';
+import type {
+  IFormatoRepository,
+  UpdateFormatoData,
+} from '../port/formato.repository';
 
 export interface AddFormatoInput {
   name: string;
@@ -13,7 +16,7 @@ export interface UpdateFormatoInput {
 }
 
 export class FormatoService {
-  constructor(private readonly formatoRepository: IFormatoRepository) { }
+  constructor(private readonly formatoRepository: IFormatoRepository) {}
 
   async findAll() {
     return await this.formatoRepository.findAll();

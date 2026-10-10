@@ -1,0 +1,2 @@
+ALTER TABLE "franchise" ADD COLUMN "formato_id" uuid NOT NULL;--> statement-breakpoint
+ALTER TABLE "franchise" ADD CONSTRAINT "franchise_formato_id_formato_id_fk" FOREIGN KEY ("formato_id") REFERENCES "public"."formato"("id") ON DELETE no action ON UPDATE no action;

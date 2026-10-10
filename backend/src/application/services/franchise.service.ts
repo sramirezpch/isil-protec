@@ -1,20 +1,20 @@
-import type {
-  IFranchiseRepository,
-} from '../port/franchise.repository';
+import type { IFranchiseRepository } from '../port/franchise.repository';
 
 export interface UpdateFranchiseInput {
   id: string;
   name?: string;
   active?: boolean;
+  formatoId?: string;
 }
 
 export interface CreateFranchiseInput {
   name: string;
   active: boolean;
+  formatoId: string;
 }
 
 export class FranchiseService {
-  constructor(private readonly franchiseRepository: IFranchiseRepository) { }
+  constructor(private readonly franchiseRepository: IFranchiseRepository) {}
 
   async getAllFranchises() {
     return await this.franchiseRepository.findAll();
