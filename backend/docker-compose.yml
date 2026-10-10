@@ -35,6 +35,7 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
+      - /app/.pnpm-store
     depends_on:
       - postgres-db
     environment:
