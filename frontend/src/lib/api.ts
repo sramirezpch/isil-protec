@@ -55,6 +55,28 @@ export function createFormato(formato: CatalogData): Promise<void> {
   return sendJson('POST', '/formato', formato, 'Error al registrar el formato')
 }
 
+export function updateFormato(
+  id: string,
+  changes: Partial<CatalogData>,
+): Promise<void> {
+  return sendJson(
+    'PATCH',
+    `/formato/${id}`,
+    changes,
+    'Error al actualizar el formato',
+  )
+}
+
+// The backend soft-deletes: the formato stays listed as inactive
+export function deleteFormato(id: string): Promise<void> {
+  return sendJson(
+    'DELETE',
+    `/formato/${id}`,
+    undefined,
+    'Error al eliminar el formato',
+  )
+}
+
 export type Brand = {
   id: string
   name: string

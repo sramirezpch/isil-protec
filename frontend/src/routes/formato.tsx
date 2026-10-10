@@ -5,8 +5,10 @@ import CatalogTable from '../components/CatalogTable'
 import {
   type CatalogData,
   createFormato,
+  deleteFormato,
   type Formato,
   getFormatos,
+  updateFormato,
 } from '../lib/api'
 
 export const Route = createFileRoute('/formato')({
@@ -32,6 +34,7 @@ function RouteComponent() {
   const [query, setQuery] = useState('')
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<Formato | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   // The POST response doesn't include the new formato, so reload the list
   const crearFormato = async (formato: CatalogData) => {
@@ -40,9 +43,31 @@ function RouteComponent() {
     setCreating(false)
   }
 
-  // TODO: call PATCH /formato/:id once the update endpoint is merged
-  const editarFormato = async (_formato: CatalogData) => {
+  const editarFormato = async (formato: CatalogData) => {
+    if (!editing) return
+    // PATCH only the fields that actually changed
+    const changes: Partial<CatalogData> = {}
+    if (formato.name !== editing.name) changes.name = formato.name
+    if (formato.active !== editing.active) changes.active = formato.active
+
+    if (Object.keys(changes).length > 0) {
+      await updateFormato(editing.id, changes)
+      await router.invalidate()
+    }
     setEditing(null)
+  }
+
+  const eliminarFormato = async (formato: Formato) => {
+    if (!window.confirm(`¿Eliminar el formato "${formato.name}"?`)) return
+    setDeleteError(null)
+    try {
+      await deleteFormato(formato.id)
+      await router.invalidate()
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error ? err.message : 'Error al eliminar el formato',
+      )
+    }
   }
 
   const term = query.trim().toLowerCase()
@@ -74,10 +99,17 @@ function RouteComponent() {
         className="mb-6 w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
       />
 
+      {deleteError && (
+        <p className="m-0 mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {deleteError}
+        </p>
+      )}
+
       <CatalogTable
         items={filtered}
         emptyMessage="No se encontraron formatos."
         onEdit={setEditing}
+        onDelete={eliminarFormato}
       />
 
       {creating && (
