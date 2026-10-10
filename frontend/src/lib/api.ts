@@ -67,6 +67,16 @@ export function updateFormato(
   )
 }
 
+// The backend soft-deletes: the formato stays listed as inactive
+export function deleteFormato(id: string): Promise<void> {
+  return sendJson(
+    'DELETE',
+    `/formato/${id}`,
+    undefined,
+    'Error al eliminar el formato',
+  )
+}
+
 export type Brand = {
   id: string
   name: string
