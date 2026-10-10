@@ -132,3 +132,20 @@ export const FRANQUICIAS_DE_PRUEBA: Franquicia[] = [
     active: false,
   },
 ]
+
+export type Linea = {
+  id: string
+  name: string
+  marca: string
+  active: boolean
+}
+
+// No linea endpoint yet: test data until the backend exposes one
+export const LINEAS_DE_PRUEBA: Linea[] = [
+  { id: 'LIN-001', name: 'Relax Time', marca: 'Banpresto', active: true },
+  { id: 'LIN-002', name: 'Vibration Stars', marca: 'Sega', active: true },
+  { id: 'LIN-003', name: 'QPosket', marca: 'Taito', active: true },
+  { id: 'LIN-004', name: 'Luminasta', marca: 'Taito', active: true },
+  { id: 'LIN-005', name: 'Coreful', marca: 'Bandai', active: false },
+]
+

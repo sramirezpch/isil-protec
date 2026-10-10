@@ -1,12 +1,21 @@
+import type { ReactNode } from 'react'
+
 type CatalogItem = {
   id: string
   name: string
   active: boolean
 }
 
+// Rendered between "Nombre" and "Estado"
+type ExtraColumn<T> = {
+  header: string
+  render: (item: T) => ReactNode
+}
+
 type Props<T extends CatalogItem> = {
   items: T[]
   emptyMessage: string
+  extraColumns?: ExtraColumn<T>[]
   onEdit?: (item: T) => void
   onDelete?: (item: T) => void
 }
@@ -14,6 +23,7 @@ type Props<T extends CatalogItem> = {
 export default function CatalogTable<T extends CatalogItem>({
   items,
   emptyMessage,
+  extraColumns = [],
   onEdit,
   onDelete,
 }: Props<T>) {
@@ -24,6 +34,11 @@ export default function CatalogTable<T extends CatalogItem>({
           <tr className="bg-[#111827] text-xs font-semibold uppercase tracking-wide text-white">
             <th className="px-4 py-3.5 font-semibold">ID</th>
             <th className="px-4 py-3.5 font-semibold">Nombre</th>
+            {extraColumns.map((col) => (
+              <th key={col.header} className="px-4 py-3.5 font-semibold">
+                {col.header}
+              </th>
+            ))}
             <th className="px-4 py-3.5 font-semibold">Estado</th>
             <th className="w-48 px-4 py-3.5 font-semibold">Acciones</th>
           </tr>
@@ -38,6 +53,11 @@ export default function CatalogTable<T extends CatalogItem>({
                 {item.id}
               </td>
               <td className="px-4 py-3.5 text-slate-700">{item.name}</td>
+              {extraColumns.map((col) => (
+                <td key={col.header} className="px-4 py-3.5 text-slate-700">
+                  {col.render(item)}
+                </td>
+              ))}
               <td className="px-4 py-3.5">
                 {item.active ? (
                   <span className="rounded bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">
@@ -71,7 +91,10 @@ export default function CatalogTable<T extends CatalogItem>({
           ))}
           {items.length === 0 && (
             <tr>
-              <td colSpan={4} className="px-4 py-8 text-center text-slate-500">
+              <td
+                colSpan={4 + extraColumns.length}
+                className="px-4 py-8 text-center text-slate-500"
+              >
                 {emptyMessage}
               </td>
             </tr>
