@@ -1,0 +1,1 @@
+ALTER TABLE "linea" ADD CONSTRAINT "linea_brandId_brand_id_fk" FOREIGN KEY ("brandId") REFERENCES "public"."brand"("id") ON DELETE no action ON UPDATE no action;

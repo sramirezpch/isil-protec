@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { boolean, pgTable, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { v7 as uuidv7 } from 'uuid';
+import { brandTable } from './brand';
 import { auditColumns } from './utils';
 
 export const lineaTable = pgTable('linea', {
@@ -9,7 +10,9 @@ export const lineaTable = pgTable('linea', {
     .defaultRandom()
     .$defaultFn(() => uuidv7()),
   name: varchar({ length: 255 }).notNull(),
-  brandId: uuid().notNull(),
+  brandId: uuid()
+    .notNull()
+    .references(() => brandTable.id),
   active: boolean().notNull().default(true),
   ...auditColumns,
 }, (table) => [
