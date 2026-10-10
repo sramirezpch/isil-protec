@@ -7,6 +7,7 @@ import {
   createFormato,
   type Formato,
   getFormatos,
+  updateFormato,
 } from '../lib/api'
 
 export const Route = createFileRoute('/formato')({
@@ -40,8 +41,17 @@ function RouteComponent() {
     setCreating(false)
   }
 
-  // TODO: call PATCH /formato/:id once the update endpoint is merged
-  const editarFormato = async (_formato: CatalogData) => {
+  const editarFormato = async (formato: CatalogData) => {
+    if (!editing) return
+    // PATCH only the fields that actually changed
+    const changes: Partial<CatalogData> = {}
+    if (formato.name !== editing.name) changes.name = formato.name
+    if (formato.active !== editing.active) changes.active = formato.active
+
+    if (Object.keys(changes).length > 0) {
+      await updateFormato(editing.id, changes)
+      await router.invalidate()
+    }
     setEditing(null)
   }
 

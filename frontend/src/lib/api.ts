@@ -55,6 +55,18 @@ export function createFormato(formato: CatalogData): Promise<void> {
   return sendJson('POST', '/formato', formato, 'Error al registrar el formato')
 }
 
+export function updateFormato(
+  id: string,
+  changes: Partial<CatalogData>,
+): Promise<void> {
+  return sendJson(
+    'PATCH',
+    `/formato/${id}`,
+    changes,
+    'Error al actualizar el formato',
+  )
+}
+
 export type Brand = {
   id: string
   name: string
