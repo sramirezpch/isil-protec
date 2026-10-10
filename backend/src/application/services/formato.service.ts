@@ -20,6 +20,12 @@ export class FormatoService {
   }
 
   async create({ name, active }: AddFormatoInput) {
+    const noamlizedName = name.trim();
+
+    if (!noamlizedName || Array.from(noamlizedName).length > 255) {
+      throw new InvalidFormatoNameError();
+    }
+
     return await this.formatoRepository.create({ name, active });
   }
 
