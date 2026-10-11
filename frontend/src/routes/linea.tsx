@@ -1,14 +1,25 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { useState } from 'react'
 import CatalogTable from '../components/CatalogTable'
-import LineaFormModal, {
-  type LineaFormData,
-} from '../components/LineaFormModal'
-import { getBrands, LINEAS_DE_PRUEBA, type Linea } from '../lib/api'
+import RelatedCatalogFormModal, {
+  type RelatedCatalogData,
+} from '../components/RelatedCatalogFormModal'
+import {
+  createLinea,
+  deleteLinea,
+  getBrands,
+  getLineas,
+  type Linea,
+  type LineaData,
+  updateLinea,
+} from '../lib/api'
 
 export const Route = createFileRoute('/linea')({
-  // Brands come from the backend to fill the "Marca" select
-  loader: () => getBrands(),
+  // Brands fill the "Marca" select in the form
+  loader: async () => {
+    const [lineas, brands] = await Promise.all([getLineas(), getBrands()])
+    return { lineas, brands }
+  },
   component: RouteComponent,
   pendingComponent: () => (
     <main className="px-8 py-8 text-slate-500">Cargando líneas...</main>
@@ -18,44 +29,69 @@ export const Route = createFileRoute('/linea')({
       <p className="m-0 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
         {error instanceof Error
           ? error.message
-          : 'Ocurrió un error al obtener marcas'}
+          : 'Ocurrió un error al obtener líneas'}
       </p>
     </main>
   ),
 })
 
 function RouteComponent() {
-  const brands = Route.useLoaderData()
-  const marcas = brands.filter((b) => b.active).map((b) => b.name)
-
-  // No linea endpoint yet: changes only live in local state
-  const [lineas, setLineas] = useState<Linea[]>(LINEAS_DE_PRUEBA)
+  const { lineas, brands } = Route.useLoaderData()
+  const router = useRouter()
   const [query, setQuery] = useState('')
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<Linea | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
-  const crearLinea = (data: LineaFormData) => {
-    const next =
-      Math.max(0, ...lineas.map((l) => Number(l.id.split('-')[1]))) + 1
-    setLineas([
-      ...lineas,
-      { id: `LIN-${String(next).padStart(3, '0')}`, ...data },
-    ])
+  // GET /linea only returns the brand's name, so find its id by name
+  const editingBrandId = editing
+    ? (brands.find((b) => b.name === editing.brandName)?.id ?? '')
+    : ''
+
+  // Only active brands can be picked, but keep the current one selectable
+  const brandOptions = (currentId?: string) =>
+    brands.filter((b) => b.active || b.id === currentId)
+
+  const toLineaData = (data: RelatedCatalogData): LineaData => ({
+    name: data.name,
+    brandId: data.relatedId,
+    active: data.active,
+  })
+
+  // Mutations don't return the linea, so reload the list after each one
+  const crearLinea = async (data: RelatedCatalogData) => {
+    await createLinea(toLineaData(data))
+    await router.invalidate()
     setCreating(false)
   }
 
-  const editarLinea = (data: LineaFormData) => {
+  const editarLinea = async (data: RelatedCatalogData) => {
     if (!editing) return
-    setLineas(lineas.map((l) => (l.id === editing.id ? { ...l, ...data } : l)))
+    // PATCH only the fields that actually changed
+    const next = toLineaData(data)
+    const changes: Partial<LineaData> = {}
+    if (next.name !== editing.name) changes.name = next.name
+    if (next.active !== editing.active) changes.active = next.active
+    if (next.brandId !== editingBrandId) changes.brandId = next.brandId
+
+    if (Object.keys(changes).length > 0) {
+      await updateLinea(editing.id, changes)
+      await router.invalidate()
+    }
     setEditing(null)
   }
 
-  // Mirrors the other catalogs: deleting marks the linea as inactive
-  const eliminarLinea = (linea: Linea) => {
+  const eliminarLinea = async (linea: Linea) => {
     if (!window.confirm(`¿Eliminar la línea "${linea.name}"?`)) return
-    setLineas(
-      lineas.map((l) => (l.id === linea.id ? { ...l, active: false } : l)),
-    )
+    setDeleteError(null)
+    try {
+      await deleteLinea(linea.id)
+      await router.invalidate()
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error ? err.message : 'Error al eliminar la línea',
+      )
+    }
   }
 
   const term = query.trim().toLowerCase()
@@ -63,7 +99,7 @@ function RouteComponent() {
     (l) =>
       l.name.toLowerCase().includes(term) ||
       l.id.toLowerCase().includes(term) ||
-      l.marca.toLowerCase().includes(term),
+      l.brandName.toLowerCase().includes(term),
   )
 
   return (
@@ -89,33 +125,45 @@ function RouteComponent() {
         className="mb-6 w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
       />
 
+      {deleteError && (
+        <p className="m-0 mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {deleteError}
+        </p>
+      )}
+
       <CatalogTable
         items={filtered}
         emptyMessage="No se encontraron líneas."
-        extraColumns={[{ header: 'Marca', render: (l) => l.marca }]}
+        extraColumns={[{ header: 'Marca', render: (l) => l.brandName }]}
         onEdit={setEditing}
         onDelete={eliminarLinea}
       />
 
       {creating && (
-        <LineaFormModal
+        <RelatedCatalogFormModal
           title="Nueva Línea"
           submitLabel="Confirmar Registro"
-          marcas={marcas}
+          entityLabel="Línea"
+          relatedLabel="Marca"
+          relatedPlaceholder="Seleccione una marca..."
+          options={brandOptions()}
           onClose={() => setCreating(false)}
           onConfirm={crearLinea}
         />
       )}
 
       {editing && (
-        <LineaFormModal
+        <RelatedCatalogFormModal
           key={editing.id}
           title="Editar Línea"
           submitLabel="Guardar Cambios"
-          marcas={marcas}
+          entityLabel="Línea"
+          relatedLabel="Marca"
+          relatedPlaceholder="Seleccione una marca..."
+          options={brandOptions(editingBrandId)}
           initial={{
             name: editing.name,
-            marca: editing.marca,
+            relatedId: editingBrandId,
             active: editing.active,
           }}
           onClose={() => setEditing(null)}

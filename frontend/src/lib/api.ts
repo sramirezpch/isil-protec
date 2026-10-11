@@ -111,41 +111,106 @@ export function deleteBrand(id: string): Promise<void> {
   return sendJson('DELETE', `/brand/${id}`, undefined, 'Error al eliminar la marca')
 }
 
+// GET /franchise joins the formato and returns its name too
 export type Franquicia = {
   id: string
   name: string
-  formato: string
   active: boolean
+  formatoId: string
+  formatoName: string
 }
 
-// No franquicia endpoint yet: test data until the backend exposes one
-export const FRANQUICIAS_DE_PRUEBA: Franquicia[] = [
-  { id: 'FRANQ-001', name: 'Dragon Ball GT', formato: 'Anime', active: true },
-  { id: 'FRANQ-002', name: 'Marvel Legends', formato: 'Comic', active: true },
-  { id: 'FRANQ-003', name: 'Neon Genesis', formato: 'Anime', active: true },
-  { id: 'FRANQ-004', name: 'Stranger Things', formato: 'Serie', active: true },
-  { id: 'FRANQ-005', name: 'Jujutsu Kaisen', formato: 'Anime', active: true },
-  {
-    id: 'FRANQ-006',
-    name: 'Resident Evil',
-    formato: 'Videojuego',
-    active: false,
-  },
-]
+export type FranquiciaData = {
+  name: string
+  active: boolean
+  formatoId: string
+}
 
+export async function getFranquicias(): Promise<Franquicia[]> {
+  const res = await fetch(`${API_URL}/franchise`)
+  if (!res.ok) {
+    throw new Error(`Error al obtener franquicias (${res.status})`)
+  }
+  const body: ApiResponse<{ franchises: Franquicia[] }> = await res.json()
+  return body.data.franchises
+}
+
+export function createFranquicia(franquicia: FranquiciaData): Promise<void> {
+  return sendJson(
+    'POST',
+    '/franchise',
+    franquicia,
+    'Error al registrar la franquicia',
+  )
+}
+
+export function updateFranquicia(
+  id: string,
+  changes: Partial<FranquiciaData>,
+): Promise<void> {
+  return sendJson(
+    'PATCH',
+    `/franchise/${id}`,
+    changes,
+    'Error al actualizar la franquicia',
+  )
+}
+
+// The backend soft-deletes: the franquicia stays listed as inactive
+export function deleteFranquicia(id: string): Promise<void> {
+  return sendJson(
+    'DELETE',
+    `/franchise/${id}`,
+    undefined,
+    'Error al eliminar la franquicia',
+  )
+}
+
+// GET /linea joins the brand and returns its name, not its id
 export type Linea = {
   id: string
   name: string
-  marca: string
+  brandName: string
   active: boolean
 }
 
-// No linea endpoint yet: test data until the backend exposes one
-export const LINEAS_DE_PRUEBA: Linea[] = [
-  { id: 'LIN-001', name: 'Relax Time', marca: 'Banpresto', active: true },
-  { id: 'LIN-002', name: 'Vibration Stars', marca: 'Sega', active: true },
-  { id: 'LIN-003', name: 'QPosket', marca: 'Taito', active: true },
-  { id: 'LIN-004', name: 'Luminasta', marca: 'Taito', active: true },
-  { id: 'LIN-005', name: 'Coreful', marca: 'Bandai', active: false },
-]
+export type LineaData = {
+  name: string
+  brandId: string
+  active: boolean
+}
 
+export async function getLineas(): Promise<Linea[]> {
+  const res = await fetch(`${API_URL}/linea`)
+  if (!res.ok) {
+    throw new Error(`Error al obtener líneas (${res.status})`)
+  }
+  const body: ApiResponse<{ lineas: Linea[] }> = await res.json()
+  return body.data.lineas
+}
+
+export function createLinea(linea: LineaData): Promise<void> {
+  return sendJson('POST', '/linea', linea, 'Error al registrar la línea')
+}
+
+export function updateLinea(
+  id: string,
+  changes: Partial<LineaData>,
+): Promise<void> {
+  return sendJson(
+    'PATCH',
+    `/linea/${id}`,
+    changes,
+    'Error al actualizar la línea',
+  )
+}
+
+// The backend soft-deletes: the linea stays listed as inactive
+export function deleteLinea(id: string): Promise<void> {
+  return sendJson(
+    'DELETE',
+    `/linea/${id}`,
+    undefined,
+    'Error al eliminar la línea',
+  )
+}
