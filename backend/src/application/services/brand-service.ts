@@ -15,7 +15,7 @@ export interface CreateBrandInput {
 }
 
 export class BrandService {
-  constructor(private readonly brandRepository: IBrandRepository) { }
+  constructor(private readonly brandRepository: IBrandRepository) {}
 
   async getAllBrands() {
     return await this.brandRepository.findAll();

@@ -199,12 +199,8 @@
           "name": "linea_brandId_brand_id_fk",
           "tableFrom": "linea",
           "tableTo": "brand",
-          "columnsFrom": [
-            "brandId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["brandId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }

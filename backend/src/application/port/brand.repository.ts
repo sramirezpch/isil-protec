@@ -5,7 +5,7 @@ export type UpdateBrandData = Partial<Pick<Brand, 'name' | 'active'>>;
 export type CreateBrandData = {
   name: string;
   active: boolean;
-}
+};
 
 export interface IBrandRepository {
   findAll(): Promise<Brand[]>;
