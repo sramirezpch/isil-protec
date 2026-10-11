@@ -4,6 +4,9 @@ import { Link } from '@tanstack/react-router'
 const itemClass =
   'flex items-center gap-2 rounded-md px-2.5 py-2 text-[13px] text-slate-300 no-underline transition hover:bg-white/5 hover:text-white data-[status=active]:bg-indigo-500 data-[status=active]:font-semibold data-[status=active]:text-white data-[status=active]:shadow-[0_4px_14px_rgba(99,102,241,0.35)]'
 
+const groupClass =
+  'm-0 px-2.5 pb-2 pt-3 text-[9px] font-bold uppercase tracking-wide text-slate-500'
+
 export default function Sidebar() {
   return (
     <aside className="sticky top-0 hidden h-screen w-50 shrink-0 flex-col overflow-y-auto bg-[#111827] md:flex">
@@ -18,9 +21,13 @@ export default function Sidebar() {
       </Link>
 
       <nav className="flex flex-col px-3 pb-6 pt-4">
-        <p className="m-0 px-2.5 pb-2 pt-3 text-[9px] font-bold uppercase tracking-wide text-slate-500">
-          Catálogos
-        </p>
+        <p className={groupClass}>Inventario</p>
+        <Link to="/figura" className={itemClass}>
+          <span aria-hidden="true">📦</span>
+          Listado de Figuras
+        </Link>
+
+        <p className={groupClass}>Catálogos</p>
         <Link to="/franquicia" className={itemClass}>
           <span aria-hidden="true">🏢</span>
           Franquicias

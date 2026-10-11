@@ -8,6 +8,8 @@ import type {
 import { db } from '../db/connection';
 import { brandTable } from '../db/schema/brand';
 import { lineaTable } from '../db/schema/linea';
+import { Linea } from '../../../domain/entities/linea.entity';
+import { toDomain } from '../mappers/linea.mapper';
 
 export class LineaRepository implements ILineaRepository {
   async findAll(): Promise<LineaListItem[]> {
@@ -35,5 +37,14 @@ export class LineaRepository implements ILineaRepository {
       .update(lineaTable)
       .set({ active: false })
       .where(eq(lineaTable.id, id));
+  }
+
+  async findById(id: string): Promise<Linea> {
+    const [linea] = await db
+      .select()
+      .from(lineaTable)
+      .where(eq(lineaTable.id, id));
+
+    return toDomain(linea);
   }
 }

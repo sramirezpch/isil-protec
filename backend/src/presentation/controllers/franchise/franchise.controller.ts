@@ -61,13 +61,11 @@ export class FranchiseController {
         );
     } catch (error) {
       console.error('Error updating franchise:', error);
-      return res
-        .status(500)
-        .json(
-          toResponseDto(false, {
-            message: 'Ocurrio un error al actualizar franquicia',
-          }),
-        );
+      return res.status(500).json(
+        toResponseDto(false, {
+          message: 'Ocurrio un error al actualizar franquicia',
+        }),
+      );
     }
   };
 
@@ -85,13 +83,11 @@ export class FranchiseController {
         .json(toResponseDto(true, { message: 'Franquicia creada con exito' }));
     } catch (error) {
       console.error('Error creating franchise:', error);
-      return res
-        .status(500)
-        .json(
-          toResponseDto(false, {
-            message: 'Ocurrio un error al crear franquicia',
-          }),
-        );
+      return res.status(500).json(
+        toResponseDto(false, {
+          message: 'Ocurrio un error al crear franquicia',
+        }),
+      );
     }
   };
 
@@ -111,13 +107,11 @@ export class FranchiseController {
         );
     } catch (error) {
       console.error('Error deleting franchise:', error);
-      return res
-        .status(500)
-        .json(
-          toResponseDto(false, {
-            message: 'Ocurrio un error al eliminar franquicia',
-          }),
-        );
+      return res.status(500).json(
+        toResponseDto(false, {
+          message: 'Ocurrio un error al eliminar franquicia',
+        }),
+      );
     }
   };
 }

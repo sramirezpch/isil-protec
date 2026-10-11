@@ -23,13 +23,11 @@ export class FormatoController {
       return res.status(200).json(toResponseDto(true, { formatos }));
     } catch (error) {
       console.error('Error al obtener formatos:', error);
-      return res
-        .status(500)
-        .json(
-          toResponseDto(false, {
-            message: 'Ocurrió un error al obtener formatos',
-          }),
-        );
+      return res.status(500).json(
+        toResponseDto(false, {
+          message: 'Ocurrió un error al obtener formatos',
+        }),
+      );
     }
   };
 
@@ -45,13 +43,11 @@ export class FormatoController {
         .json(toResponseDto(true, { message: 'Formato creado exitosamente' }));
     } catch (error) {
       console.error('Error al crear formato:', error);
-      return res
-        .status(500)
-        .json(
-          toResponseDto(false, {
-            message: 'Ocurrió un error al crear el formato',
-          }),
-        );
+      return res.status(500).json(
+        toResponseDto(false, {
+          message: 'Ocurrió un error al crear el formato',
+        }),
+      );
     }
   };
 
@@ -91,13 +87,11 @@ export class FormatoController {
         .json(toResponseDto(true, { message: 'Formato eliminado con éxito' }));
     } catch (error) {
       console.error('Error al eliminar formato:', error);
-      return res
-        .status(500)
-        .json(
-          toResponseDto(false, {
-            message: 'Ocurrió un error al eliminar el formato',
-          }),
-        );
+      return res.status(500).json(
+        toResponseDto(false, {
+          message: 'Ocurrió un error al eliminar el formato',
+        }),
+      );
     }
   };
 }

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as FiguraRouteImport } from './routes/figura'
 import { Route as FormatoRouteImport } from './routes/formato'
 import { Route as FranquiciaRouteImport } from './routes/franquicia'
 import { Route as LineaRouteImport } from './routes/linea'
@@ -24,6 +25,11 @@ const IndexRoute = IndexRouteImport.update({
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FiguraRoute = FiguraRouteImport.update({
+  id: '/figura',
+  path: '/figura',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FormatoRoute = FormatoRouteImport.update({
@@ -50,6 +56,7 @@ const MarcaIndexRoute = MarcaIndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/figura': typeof FiguraRoute
   '/formato': typeof FormatoRoute
   '/franquicia': typeof FranquiciaRoute
   '/linea': typeof LineaRoute
@@ -58,6 +65,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/figura': typeof FiguraRoute
   '/formato': typeof FormatoRoute
   '/franquicia': typeof FranquiciaRoute
   '/linea': typeof LineaRoute
@@ -67,6 +75,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/figura': typeof FiguraRoute
   '/formato': typeof FormatoRoute
   '/franquicia': typeof FranquiciaRoute
   '/linea': typeof LineaRoute
@@ -74,13 +83,28 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/formato' | '/franquicia' | '/linea' | '/marca/'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/figura'
+    | '/formato'
+    | '/franquicia'
+    | '/linea'
+    | '/marca/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/formato' | '/franquicia' | '/linea' | '/marca'
+  to:
+    | '/'
+    | '/about'
+    | '/figura'
+    | '/formato'
+    | '/franquicia'
+    | '/linea'
+    | '/marca'
   id:
     | '__root__'
     | '/'
     | '/about'
+    | '/figura'
     | '/formato'
     | '/franquicia'
     | '/linea'
@@ -90,6 +114,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  FiguraRoute: typeof FiguraRoute
   FormatoRoute: typeof FormatoRoute
   FranquiciaRoute: typeof FranquiciaRoute
   LineaRoute: typeof LineaRoute
@@ -110,6 +135,13 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/figura': {
+      id: '/figura'
+      path: '/figura'
+      fullPath: '/figura'
+      preLoaderRoute: typeof FiguraRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/formato': {
@@ -146,6 +178,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  FiguraRoute: FiguraRoute,
   FormatoRoute: FormatoRoute,
   FranquiciaRoute: FranquiciaRoute,
   LineaRoute: LineaRoute,

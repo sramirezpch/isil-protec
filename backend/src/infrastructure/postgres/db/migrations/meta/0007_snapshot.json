@@ -183,12 +183,8 @@
           "name": "franchise_formato_id_formato_id_fk",
           "tableFrom": "franchise",
           "tableTo": "formato",
-          "columnsFrom": [
-            "formato_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["formato_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -272,12 +268,8 @@
           "name": "linea_brandId_brand_id_fk",
           "tableFrom": "linea",
           "tableTo": "brand",
-          "columnsFrom": [
-            "brandId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["brandId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }

@@ -17,6 +17,10 @@ import { LineaRepository } from './infrastructure/postgres/repository/linea.repo
 import { LineaService } from './application/services/linea.service';
 import { LineaController } from './presentation/controllers/linea/linea.controller';
 import { FranchiseRouter } from './presentation/routes/franchise.routes';
+import { ProductRepository } from './infrastructure/postgres/repository/product.repository';
+import { ProductService } from './application/services/product.service';
+import { ProductController } from './presentation/controllers/product/product.controller';
+import { ProductRouter } from './presentation/routes/product.routes';
 
 const app = express();
 
@@ -40,18 +44,25 @@ const lineaService = new LineaService(lineaRepository);
 const lineaController = new LineaController(lineaService);
 const lineaRouter = new LineaRouter(lineaController);
 
-app.use('/api/v1/formato', formatoRouter.router);
-app.use('/api/v1/brand', brandRouter.router);
-app.use('/api/v1/linea', lineaRouter.router);
-
 const franchiseRepository = new FranchiseRepository();
 const franchiseService = new FranchiseService(franchiseRepository);
 const franchiseController = new FranchiseController(franchiseService);
 const franchiseRouter = new FranchiseRouter(franchiseController);
 
+const productRepository = new ProductRepository();
+const productService = new ProductService(
+  productRepository,
+  franchiseRepository,
+  lineaRepository,
+);
+const productController = new ProductController(productService);
+const productRouter = new ProductRouter(productController);
+
 app.use('/api/v1/formato', formatoRouter.router);
 app.use('/api/v1/brand', brandRouter.router);
 app.use('/api/v1/franchise', franchiseRouter.router);
+app.use('/api/v1/linea', lineaRouter.router);
+app.use('/api/v1/product', productRouter.router);
 
 app.listen(3000, () => {
   console.log('Server listening on port 3000');
