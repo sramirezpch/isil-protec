@@ -9,6 +9,10 @@ import { BrandController } from './presentation/controllers/brand/brand.controll
 import { FormatoController } from './presentation/controllers/formato/formato.controller';
 import { BrandRouter } from './presentation/routes/brand.routes';
 import { FormatoRouter } from './presentation/routes/formato.routes';
+import { LineaRouter } from './presentation/routes/linea.routes';
+import { LineaRepository } from './infrastructure/postgres/repository/linea.repository';
+import { LineaService } from './application/services/linea.service';
+import { LineaController } from './presentation/controllers/linea/linea.controller';
 
 const app = express();
 
@@ -27,8 +31,14 @@ const brandService = new BrandService(brandRepository);
 const brandController = new BrandController(brandService);
 const brandRouter = new BrandRouter(brandController);
 
+const lineaRepository = new LineaRepository();
+const lineaService = new LineaService(lineaRepository);
+const lineaController = new LineaController(lineaService);
+const lineaRouter = new LineaRouter(lineaController);
+
 app.use('/api/v1/formato', formatoRouter.router);
 app.use('/api/v1/brand', brandRouter.router);
+app.use('/api/v1/linea', lineaRouter.router);
 
 app.listen('3000', () => {
   console.log('Server listening on port 3000');
