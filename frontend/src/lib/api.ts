@@ -214,3 +214,64 @@ export function deleteLinea(id: string): Promise<void> {
     'Error al eliminar la línea',
   )
 }
+
+// GET /product returns franchiseId and lineaId, not their names
+export type Product = {
+  id: string
+  sku: string
+  name: string
+  // numeric column: comes back as a string, e.g. "149.99"
+  price: string
+  stock: number
+  active: boolean
+  franchiseId: string
+  lineaId: string
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+}
+
+export type ProductData = {
+  sku: string
+  name: string
+  price: string
+  stock: number
+  active: boolean
+  franchiseId: string
+  lineaId: string
+}
+
+export async function getProducts(): Promise<Product[]> {
+  const res = await fetch(`${API_URL}/product`)
+  if (!res.ok) {
+    throw new Error(`Error al obtener figuras (${res.status})`)
+  }
+  const body: ApiResponse<{ products: Product[] }> = await res.json()
+  return body.data.products
+}
+
+export function createProduct(product: ProductData): Promise<void> {
+  return sendJson('POST', '/product', product, 'Error al registrar la figura')
+}
+
+export function updateProduct(
+  id: string,
+  changes: Partial<ProductData>,
+): Promise<void> {
+  return sendJson(
+    'PATCH',
+    `/product/${id}`,
+    changes,
+    'Error al actualizar la figura',
+  )
+}
+
+// The backend soft-deletes ("archive"): the product is set to inactive
+export function archiveProduct(id: string): Promise<void> {
+  return sendJson(
+    'DELETE',
+    `/product/${id}`,
+    undefined,
+    'Error al archivar la figura',
+  )
+}

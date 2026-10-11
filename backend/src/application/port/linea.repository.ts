@@ -19,6 +19,7 @@ export type LineaListItem = {
 
 export interface ILineaRepository {
   findAll(): Promise<LineaListItem[]>;
+  findById(id: string): Promise<Linea>;
   create(data: CreateLineaInput): Promise<void>;
   update(id: string, data: UpdateLineaData): Promise<void>;
   delete(id: string): Promise<void>;

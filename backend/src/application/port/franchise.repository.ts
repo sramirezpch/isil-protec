@@ -21,6 +21,7 @@ export type FranchiseListItem = {
 
 export interface IFranchiseRepository {
   findAll(): Promise<FranchiseListItem[]>;
+  findById(id: string): Promise<Franchise>;
   update(id: string, data: UpdateFranchiseData): Promise<void>;
   create(data: CreateFranchiseData): Promise<void>;
   delete(id: string): Promise<void>;

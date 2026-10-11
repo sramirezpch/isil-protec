@@ -8,6 +8,8 @@ import type {
 import { db } from '../db/connection';
 import { formatoTable } from '../db/schema/formato';
 import { franchiseTable } from '../db/schema/franchise';
+import { Franchise } from '../../../domain/entities/franchise.entity';
+import { toDomain } from '../mappers/franchise.mapper';
 
 export class FranchiseRepository implements IFranchiseRepository {
   async findAll(): Promise<FranchiseListItem[]> {
@@ -26,13 +28,24 @@ export class FranchiseRepository implements IFranchiseRepository {
   async update(id: string, data: UpdateFranchiseData): Promise<void> {
     await db.update(franchiseTable).set(data).where(eq(franchiseTable.id, id));
   }
+
   async create(data: CreateFranchiseData): Promise<void> {
     await db.insert(franchiseTable).values(data);
   }
+
   async delete(id: string): Promise<void> {
     await db
       .update(franchiseTable)
       .set({ active: false })
       .where(eq(franchiseTable.id, id));
+  }
+
+  async findById(id: string): Promise<Franchise> {
+    const [franchise] = await db
+      .select()
+      .from(franchiseTable)
+      .where(eq(franchiseTable.id, id));
+
+    return toDomain(franchise);
   }
 }

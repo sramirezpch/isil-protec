@@ -57,6 +57,13 @@
       "when": 1791695925103,
       "tag": "0007_foamy_rocket_racer",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791710114077,
+      "tag": "0008_striped_chronomancer",
+      "breakpoints": true
     }
   ]
 }

@@ -85,13 +85,11 @@ export class BrandController {
     } catch (error) {
       console.error('Error deleting brand:', error);
 
-      return res
-        .status(500)
-        .json(
-          toResponseDto(false, {
-            message: 'Ocurrio un error al eliminar marca',
-          }),
-        );
+      return res.status(500).json(
+        toResponseDto(false, {
+          message: 'Ocurrio un error al eliminar marca',
+        }),
+      );
     }
   };
 }
