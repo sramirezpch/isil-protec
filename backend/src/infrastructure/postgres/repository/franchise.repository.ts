@@ -1,18 +1,26 @@
 import { eq } from 'drizzle-orm';
 import type {
   CreateFranchiseData,
+  FranchiseListItem,
   IFranchiseRepository,
   UpdateFranchiseData,
 } from '../../../application/port/franchise.repository';
-import type { Franchise } from '../../../domain/entities/franchise.entity';
 import { db } from '../db/connection';
+import { formatoTable } from '../db/schema/formato';
 import { franchiseTable } from '../db/schema/franchise';
-import { toDomain } from '../mappers/franchise.mapper';
 
 export class FranchiseRepository implements IFranchiseRepository {
-  async findAll(): Promise<Franchise[]> {
-    const franchises = await db.select().from(franchiseTable);
-    return franchises.map(toDomain);
+  async findAll(): Promise<FranchiseListItem[]> {
+    return db
+      .select({
+        id: franchiseTable.id,
+        name: franchiseTable.name,
+        active: franchiseTable.active,
+        formatoId: franchiseTable.formatoId,
+        formatoName: formatoTable.name,
+      })
+      .from(franchiseTable)
+      .innerJoin(formatoTable, eq(franchiseTable.formatoId, formatoTable.id));
   }
 
   async update(id: string, data: UpdateFranchiseData): Promise<void> {
