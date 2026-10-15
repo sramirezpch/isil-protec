@@ -15,7 +15,8 @@ export class ProductController {
 
     findAll = async (req: Request, res: Response): Promise<Response> => {
         try {
-            const products = await this.productService.findAll();
+            const query = typeof req.query.query === 'string' ? req.query.query : undefined;
+            const products = await this.productService.findAll(query);
 
             return res.status(200).json(toResponseDto(true, { products }));
         } catch (error) {

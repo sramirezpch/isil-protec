@@ -15,7 +15,7 @@ export type UpdateProductInput = { id: string } & Omit<
 >;
 
 export interface IProductRepository {
-  findAll(): Promise<Product[]>;
+  findAll(query?: string): Promise<Product[]>;
   update(input: UpdateProductInput): Promise<void>;
   create(input: CreateProductInput): Promise<void>;
   delete(id: string): Promise<void>;
