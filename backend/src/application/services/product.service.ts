@@ -34,8 +34,8 @@ export class ProductService {
     private readonly lineaRepository: ILineaRepository,
   ) {}
 
-  async findAll() {
-    return await this.productRepository.findAll();
+  async findAll(query?: string) {
+    return await this.productRepository.findAll(query);
   }
 
   async create(input: CreateProductInput) {

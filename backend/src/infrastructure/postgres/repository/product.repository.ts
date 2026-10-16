@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, ilike, or } from 'drizzle-orm';
 import { DatabaseError } from 'pg';
 import {
   CreateProductInput,
@@ -40,8 +40,18 @@ export class ProductRepository implements IProductRepository {
       .set({ active: false })
       .where(eq(productTable.id, id));
   }
-  async findAll(): Promise<Product[]> {
-    const products = await db.select().from(productTable);
+  async findAll(query?: string): Promise<Product[]> {
+    const products = await db
+      .select()
+      .from(productTable)
+      .where(
+        query
+          ? or(
+              ilike(productTable.sku, `%${query}%`),
+              ilike(productTable.name, `%${query}%`),
+            )
+          : undefined,
+      );
 
     return products.map(toDomain);
   }
