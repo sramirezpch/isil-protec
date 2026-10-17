@@ -21,6 +21,10 @@ import { ProductRepository } from './infrastructure/postgres/repository/product.
 import { ProductService } from './application/services/product.service';
 import { ProductController } from './presentation/controllers/product/product.controller';
 import { ProductRouter } from './presentation/routes/product.routes';
+import { SupplierRouter } from './presentation/routes/supplier.routes';
+import { SupplierController } from './presentation/controllers/supplier/supplier.controller';
+import { SupplierService } from './application/services/supplier.service';
+import { SupplierRepository } from './infrastructure/postgres/repository/supplier.repository';
 
 const app = express();
 
@@ -49,6 +53,11 @@ const franchiseService = new FranchiseService(franchiseRepository);
 const franchiseController = new FranchiseController(franchiseService);
 const franchiseRouter = new FranchiseRouter(franchiseController);
 
+const supplierRepository = new SupplierRepository();
+const supplierService = new SupplierService(supplierRepository);
+const supplierController = new SupplierController(supplierService);
+const supplierRouter = new SupplierRouter(supplierController);
+
 const productRepository = new ProductRepository();
 const productService = new ProductService(
   productRepository,
@@ -63,6 +72,7 @@ app.use('/api/v1/brand', brandRouter.router);
 app.use('/api/v1/franchise', franchiseRouter.router);
 app.use('/api/v1/linea', lineaRouter.router);
 app.use('/api/v1/product', productRouter.router);
+app.use('/api/v1/supplier', supplierRouter.router);
 
 app.listen(3000, () => {
   console.log('Server listening on port 3000');
