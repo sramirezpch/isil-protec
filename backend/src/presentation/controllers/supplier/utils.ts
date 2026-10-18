@@ -20,3 +20,8 @@ export type UpdateSupplierBody = Partial<{
   phone: string;
   active: boolean;
 }>;
+
+export interface ValidateTaxIdBody {
+  country: string;
+  taxId: string;
+}

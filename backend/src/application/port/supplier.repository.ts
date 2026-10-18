@@ -17,6 +17,7 @@ export type UpdateSupplierInput = { id: string } & Omit<
 
 export interface ISupplierRepository {
   findAll(query?: string): Promise<Supplier[]>;
+  findById(id: string): Promise<Supplier | null>;
   update(input: UpdateSupplierInput): Promise<void>;
   create(input: CreateSupplierInput): Promise<void>;
   delete(id: string): Promise<void>;

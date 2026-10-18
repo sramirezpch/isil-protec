@@ -27,6 +27,16 @@ export class SupplierRepository implements ISupplierRepository {
     return suppliers.map(toDomain);
   }
 
+  async findById(id: string): Promise<Supplier | null> {
+    const [supplier] = await db
+      .select()
+      .from(supplierTable)
+      .where(eq(supplierTable.id, id))
+      .limit(1);
+
+    return supplier ? toDomain(supplier) : null;
+  }
+
   async create(input: CreateSupplierInput): Promise<void> {
     await db.insert(supplierTable).values(input);
   }

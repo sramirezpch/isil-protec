@@ -25,6 +25,8 @@ import { SupplierRouter } from './presentation/routes/supplier.routes';
 import { SupplierController } from './presentation/controllers/supplier/supplier.controller';
 import { SupplierService } from './application/services/supplier.service';
 import { SupplierRepository } from './infrastructure/postgres/repository/supplier.repository';
+import { LookupTaxTaxIdValidator } from './infrastructure/external/lookuptax/lookuptax-tax-id.validator';
+import { env } from './infrastructure/config/environment';
 
 const app = express();
 
@@ -54,7 +56,11 @@ const franchiseController = new FranchiseController(franchiseService);
 const franchiseRouter = new FranchiseRouter(franchiseController);
 
 const supplierRepository = new SupplierRepository();
-const supplierService = new SupplierService(supplierRepository);
+const taxIdValidator = new LookupTaxTaxIdValidator(
+  env.taxIdApiKey,
+  env.taxIdApiUrl,
+);
+const supplierService = new SupplierService(supplierRepository, taxIdValidator);
 const supplierController = new SupplierController(supplierService);
 const supplierRouter = new SupplierRouter(supplierController);
 
