@@ -4,12 +4,15 @@ import helmet from 'helmet';
 import { BrandService } from './application/services/brand-service';
 import { FormatoService } from './application/services/formato.service';
 import { FranchiseService } from './application/services/franchise.service';
+import { ClientService } from './application/services/client.service';
 import { BrandRepository } from './infrastructure/postgres/repository/brand.repository';
 import { FormatoRepository } from './infrastructure/postgres/repository/formato.repository';
 import { FranchiseRepository } from './infrastructure/postgres/repository/franchise.repository';
+import { ClientRepository } from './infrastructure/postgres/repository/client.repository';
 import { BrandController } from './presentation/controllers/brand/brand.controller';
 import { FormatoController } from './presentation/controllers/formato/formato.controller';
 import { FranchiseController } from './presentation/controllers/franchise/franchise.controller';
+import { ClientController } from './presentation/controllers/client/client.controller';
 import { BrandRouter } from './presentation/routes/brand.routes';
 import { FormatoRouter } from './presentation/routes/formato.routes';
 import { LineaRouter } from './presentation/routes/linea.routes';
@@ -17,6 +20,7 @@ import { LineaRepository } from './infrastructure/postgres/repository/linea.repo
 import { LineaService } from './application/services/linea.service';
 import { LineaController } from './presentation/controllers/linea/linea.controller';
 import { FranchiseRouter } from './presentation/routes/franchise.routes';
+import { ClientRouter } from './presentation/routes/client.routes';
 import { ProductRepository } from './infrastructure/postgres/repository/product.repository';
 import { ProductService } from './application/services/product.service';
 import { ProductController } from './presentation/controllers/product/product.controller';
@@ -64,6 +68,11 @@ const supplierService = new SupplierService(supplierRepository, taxIdValidator);
 const supplierController = new SupplierController(supplierService);
 const supplierRouter = new SupplierRouter(supplierController);
 
+const clientRepository = new ClientRepository();
+const clientService = new ClientService(clientRepository);
+const clientController = new ClientController(clientService);
+const clientRouter = new ClientRouter(clientController);
+
 const productRepository = new ProductRepository();
 const productService = new ProductService(
   productRepository,
@@ -77,6 +86,7 @@ app.use('/api/v1/formato', formatoRouter.router);
 app.use('/api/v1/brand', brandRouter.router);
 app.use('/api/v1/franchise', franchiseRouter.router);
 app.use('/api/v1/linea', lineaRouter.router);
+app.use('/api/v1/client', clientRouter.router);
 app.use('/api/v1/product', productRouter.router);
 app.use('/api/v1/supplier', supplierRouter.router);
 
