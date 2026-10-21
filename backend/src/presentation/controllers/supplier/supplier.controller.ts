@@ -1,10 +1,10 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import {
-  SupplierService,
+  type SupplierService,
   SupplierTaxIdError,
 } from '../../../application/services/supplier.service';
-import { DtoResponse, toResponseDto } from '../../../utils';
-import {
+import { type DtoResponse, toResponseDto } from '../../../utils';
+import type {
   CreateSupplierBody,
   UpdateSupplierBody,
   UpdateSupplierParams,
@@ -12,11 +12,12 @@ import {
 } from './utils';
 
 export class SupplierController {
-  constructor(private readonly supplierService: SupplierService) { }
+  constructor(private readonly supplierService: SupplierService) {}
 
   findAll = async (req: Request, res: Response): Promise<Response> => {
     try {
-      const query = typeof req.query.query === 'string' ? req.query.query : undefined;
+      const query =
+        typeof req.query.query === 'string' ? req.query.query : undefined;
       const suppliers = await this.supplierService.findAll(query);
       return res.status(200).json(toResponseDto(true, { suppliers }));
     } catch (error) {
@@ -27,7 +28,7 @@ export class SupplierController {
         }),
       );
     }
-  }
+  };
 
   validateTaxId = async (
     req: Request<null, DtoResponse, ValidateTaxIdBody>,
@@ -43,7 +44,10 @@ export class SupplierController {
         );
       }
 
-      const result = await this.supplierService.validateTaxId({ country, taxId });
+      const result = await this.supplierService.validateTaxId({
+        country,
+        taxId,
+      });
       return res.status(200).json(
         toResponseDto(true, {
           companyName: result.companyName,
@@ -63,7 +67,7 @@ export class SupplierController {
         }),
       );
     }
-  }
+  };
 
   create = async (
     req: Request<null, DtoResponse, CreateSupplierBody>,
@@ -98,7 +102,7 @@ export class SupplierController {
         }),
       );
     }
-  }
+  };
 
   update = async (
     req: Request<UpdateSupplierParams, DtoResponse, UpdateSupplierBody>,
@@ -118,7 +122,11 @@ export class SupplierController {
 
     try {
       await this.supplierService.update({ id: req.params.id, ...req.body });
-      return res.status(200).json(toResponseDto(true, { message: 'Proveedor actualizado con exito' }));
+      return res
+        .status(200)
+        .json(
+          toResponseDto(true, { message: 'Proveedor actualizado con exito' }),
+        );
     } catch (error) {
       if (error instanceof SupplierTaxIdError) {
         return res
@@ -132,12 +140,16 @@ export class SupplierController {
         }),
       );
     }
-  }
+  };
 
   delete = async (req: Request<UpdateSupplierParams>, res: Response) => {
     try {
       await this.supplierService.delete(req.params.id);
-      return res.status(200).json(toResponseDto(true, { message: 'Proveedor eliminado con exito' }));
+      return res
+        .status(200)
+        .json(
+          toResponseDto(true, { message: 'Proveedor eliminado con exito' }),
+        );
     } catch (error) {
       console.error('Error al eliminar proveedor:', error);
       return res.status(500).json(
@@ -146,5 +158,5 @@ export class SupplierController {
         }),
       );
     }
-  }
+  };
 }

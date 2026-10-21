@@ -183,12 +183,8 @@
           "name": "franchise_formato_id_formato_id_fk",
           "tableFrom": "franchise",
           "tableTo": "formato",
-          "columnsFrom": [
-            "formato_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["formato_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -272,12 +268,8 @@
           "name": "linea_brandId_brand_id_fk",
           "tableFrom": "linea",
           "tableTo": "brand",
-          "columnsFrom": [
-            "brandId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["brandId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -369,12 +361,8 @@
           "name": "product_franchiseId_franchise_id_fk",
           "tableFrom": "product",
           "tableTo": "franchise",
-          "columnsFrom": [
-            "franchiseId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["franchiseId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -382,12 +370,8 @@
           "name": "product_lineaId_linea_id_fk",
           "tableFrom": "product",
           "tableTo": "linea",
-          "columnsFrom": [
-            "lineaId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["lineaId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -397,9 +381,7 @@
         "product_sku_unique": {
           "name": "product_sku_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "sku"
-          ]
+          "columns": ["sku"]
         }
       },
       "policies": {},

@@ -1,16 +1,15 @@
-import { eq, ilike, or } from "drizzle-orm";
-import {
+import { eq, ilike, or } from 'drizzle-orm';
+import type {
   CreateSupplierInput,
   ISupplierRepository,
-  UpdateSupplierInput
-} from "../../../application/port/supplier.repository";
-import { Supplier } from "../../../domain/entities/supplier.entity";
-import { db } from "../db/connection";
-import { supplierTable } from "../db/schema/supplier";
-import { toDomain } from "../mappers/supplier.mapper";
+  UpdateSupplierInput,
+} from '../../../application/port/supplier.repository';
+import type { Supplier } from '../../../domain/entities/supplier.entity';
+import { db } from '../db/connection';
+import { supplierTable } from '../db/schema/supplier';
+import { toDomain } from '../mappers/supplier.mapper';
 
 export class SupplierRepository implements ISupplierRepository {
-
   async findAll(query?: string): Promise<Supplier[]> {
     const suppliers = await db
       .select()
@@ -18,9 +17,9 @@ export class SupplierRepository implements ISupplierRepository {
       .where(
         query
           ? or(
-            ilike(supplierTable.companyName, `%${query}%`),
-            ilike(supplierTable.contactName, `%${query}%`),
-          )
+              ilike(supplierTable.companyName, `%${query}%`),
+              ilike(supplierTable.contactName, `%${query}%`),
+            )
           : undefined,
       );
 
@@ -40,13 +39,16 @@ export class SupplierRepository implements ISupplierRepository {
   async create(input: CreateSupplierInput): Promise<void> {
     await db.insert(supplierTable).values(input);
   }
-  
+
   async update(input: UpdateSupplierInput): Promise<void> {
     const { id, ...rest } = input;
     await db.update(supplierTable).set(rest).where(eq(supplierTable.id, id));
   }
 
   async delete(id: string): Promise<void> {
-    await db.update(supplierTable).set({ active: false }).where(eq(supplierTable.id, id));
+    await db
+      .update(supplierTable)
+      .set({ active: false })
+      .where(eq(supplierTable.id, id));
   }
 }

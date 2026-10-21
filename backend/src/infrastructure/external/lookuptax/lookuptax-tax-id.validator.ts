@@ -1,6 +1,6 @@
 import {
-  TaxIdProviderError,
   type ITaxIdValidator,
+  TaxIdProviderError,
   type TaxIdValidationResult,
   type TaxIdValidationStatus,
   type ValidateTaxIdInput,

@@ -1,5 +1,5 @@
-import { Product } from '../../../domain/entities/product.entity';
-import { ProductModel } from '../db/schema/product';
+import type { Product } from '../../../domain/entities/product.entity';
+import type { ProductModel } from '../db/schema/product';
 
 export const toPersistence = (domain: Product): ProductModel => ({
   id: domain.id,

@@ -1,11 +1,11 @@
 import { eq, ilike, or } from 'drizzle-orm';
 import { DatabaseError } from 'pg';
-import {
+import type {
   CreateProductInput,
   IProductRepository,
   UpdateProductInput,
 } from '../../../application/port/product.repository';
-import { Product } from '../../../domain/entities/product.entity';
+import type { Product } from '../../../domain/entities/product.entity';
 import { ProductSkuAlreadyExistsError } from '../../../domain/errors/product.errors';
 import { db } from '../db/connection';
 import { productTable } from '../db/schema/product';
@@ -16,7 +16,8 @@ const SKU_UNIQUE_CONSTRAINT = 'product_sku_unique';
 
 // Drizzle wraps the pg error in `cause`, so check both levels
 const isDuplicateSku = (error: unknown): boolean => {
-  const pgError = error instanceof DatabaseError ? error : (error as Error)?.cause;
+  const pgError =
+    error instanceof DatabaseError ? error : (error as Error)?.cause;
   return (
     pgError instanceof DatabaseError &&
     pgError.code === UNIQUE_VIOLATION &&

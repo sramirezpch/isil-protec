@@ -1,8 +1,8 @@
 import { FranchiseNotFound } from '../../domain/errors/franchise.errors';
 import { LineaNotFound } from '../../domain/errors/linea.errors';
-import { IFranchiseRepository } from '../port/franchise.repository';
-import { ILineaRepository } from '../port/linea.repository';
-import { IProductRepository } from '../port/product.repository';
+import type { IFranchiseRepository } from '../port/franchise.repository';
+import type { ILineaRepository } from '../port/linea.repository';
+import type { IProductRepository } from '../port/product.repository';
 
 export interface CreateProductInput {
   name: string;

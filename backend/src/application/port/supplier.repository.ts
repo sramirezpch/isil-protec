@@ -1,4 +1,4 @@
-import { Supplier } from "../../domain/entities/supplier.entity";
+import type { Supplier } from '../../domain/entities/supplier.entity';
 
 export interface CreateSupplierInput {
   companyName: string;
@@ -12,7 +12,7 @@ export interface CreateSupplierInput {
 
 export type UpdateSupplierInput = { id: string } & Omit<
   Partial<Supplier>,
-  "createdAt" | "updatedAt" | "deletedAt"
+  'createdAt' | 'updatedAt' | 'deletedAt'
 >;
 
 export interface ISupplierRepository {

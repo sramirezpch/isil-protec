@@ -1,7 +1,7 @@
 import { boolean, pgTable, uuid, varchar } from 'drizzle-orm/pg-core';
 import { v7 as uuidv7 } from 'uuid';
-import { auditColumns } from './utils';
 import { formatoTable } from './formato';
+import { auditColumns } from './utils';
 
 export const franchiseTable = pgTable('franchise', {
   id: uuid()

@@ -3,12 +3,12 @@ import type {
   ISupplierRepository,
   UpdateSupplierInput,
 } from '../port/supplier.repository';
-import { TaxIdProviderError } from '../port/tax-id-validator';
 import type {
   ITaxIdValidator,
   TaxIdValidationResult,
   ValidateTaxIdInput,
 } from '../port/tax-id-validator';
+import { TaxIdProviderError } from '../port/tax-id-validator';
 
 export const SUPPORTED_TAX_ID_COUNTRIES = [
   'JP',

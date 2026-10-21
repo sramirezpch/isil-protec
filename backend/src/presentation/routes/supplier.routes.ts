@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { SupplierController } from '../controllers/supplier/supplier.controller';
+import type { SupplierController } from '../controllers/supplier/supplier.controller';
 
 export class SupplierRouter {
   public router: Router;

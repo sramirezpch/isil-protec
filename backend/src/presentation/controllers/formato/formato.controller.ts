@@ -2,16 +2,16 @@ import type { Request, Response } from 'express';
 import type { FormatoService } from '../../../application/services/formato.service';
 import {
   FormatoNameAlreadyExistsError,
-  InvalidFormatoNameError,
-  FormatoUpdateError,
   FormatoNotFoundError,
+  FormatoUpdateError,
+  InvalidFormatoNameError,
 } from '../../../domain/errors/formato.errors';
-import { DtoResponse, toResponseDto } from '../../../utils';
+import { type DtoResponse, toResponseDto } from '../../../utils';
 import type {
   AddFormatoBody,
+  DeleteFormatoParams,
   UpdateFormatoBody,
   UpdateFormatoParams,
-  DeleteFormatoParams,
 } from './utils';
 
 export class FormatoController {

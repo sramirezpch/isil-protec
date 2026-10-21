@@ -5,10 +5,10 @@ import type {
   IFranchiseRepository,
   UpdateFranchiseData,
 } from '../../../application/port/franchise.repository';
+import type { Franchise } from '../../../domain/entities/franchise.entity';
 import { db } from '../db/connection';
 import { formatoTable } from '../db/schema/formato';
 import { franchiseTable } from '../db/schema/franchise';
-import { Franchise } from '../../../domain/entities/franchise.entity';
 import { toDomain } from '../mappers/franchise.mapper';
 
 export class FranchiseRepository implements IFranchiseRepository {

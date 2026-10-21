@@ -15,6 +15,7 @@ import { Route as FiguraRouteImport } from './routes/figura'
 import { Route as FormatoRouteImport } from './routes/formato'
 import { Route as FranquiciaRouteImport } from './routes/franquicia'
 import { Route as LineaRouteImport } from './routes/linea'
+import { Route as ProveedorRouteImport } from './routes/proveedor'
 import { Route as MarcaIndexRouteImport } from './routes/marca/index'
 
 const IndexRoute = IndexRouteImport.update({
@@ -47,6 +48,11 @@ const LineaRoute = LineaRouteImport.update({
   path: '/linea',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProveedorRoute = ProveedorRouteImport.update({
+  id: '/proveedor',
+  path: '/proveedor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MarcaIndexRoute = MarcaIndexRouteImport.update({
   id: '/marca/',
   path: '/marca/',
@@ -60,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/formato': typeof FormatoRoute
   '/franquicia': typeof FranquiciaRoute
   '/linea': typeof LineaRoute
+  '/proveedor': typeof ProveedorRoute
   '/marca/': typeof MarcaIndexRoute
 }
 export interface FileRoutesByTo {
@@ -69,6 +76,7 @@ export interface FileRoutesByTo {
   '/formato': typeof FormatoRoute
   '/franquicia': typeof FranquiciaRoute
   '/linea': typeof LineaRoute
+  '/proveedor': typeof ProveedorRoute
   '/marca': typeof MarcaIndexRoute
 }
 export interface FileRoutesById {
@@ -79,6 +87,7 @@ export interface FileRoutesById {
   '/formato': typeof FormatoRoute
   '/franquicia': typeof FranquiciaRoute
   '/linea': typeof LineaRoute
+  '/proveedor': typeof ProveedorRoute
   '/marca/': typeof MarcaIndexRoute
 }
 export interface FileRouteTypes {
@@ -90,6 +99,7 @@ export interface FileRouteTypes {
     | '/formato'
     | '/franquicia'
     | '/linea'
+    | '/proveedor'
     | '/marca/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -99,6 +109,7 @@ export interface FileRouteTypes {
     | '/formato'
     | '/franquicia'
     | '/linea'
+    | '/proveedor'
     | '/marca'
   id:
     | '__root__'
@@ -108,6 +119,7 @@ export interface FileRouteTypes {
     | '/formato'
     | '/franquicia'
     | '/linea'
+    | '/proveedor'
     | '/marca/'
   fileRoutesById: FileRoutesById
 }
@@ -118,6 +130,7 @@ export interface RootRouteChildren {
   FormatoRoute: typeof FormatoRoute
   FranquiciaRoute: typeof FranquiciaRoute
   LineaRoute: typeof LineaRoute
+  ProveedorRoute: typeof ProveedorRoute
   MarcaIndexRoute: typeof MarcaIndexRoute
 }
 
@@ -165,6 +178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LineaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/proveedor': {
+      id: '/proveedor'
+      path: '/proveedor'
+      fullPath: '/proveedor'
+      preLoaderRoute: typeof ProveedorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/marca/': {
       id: '/marca/'
       path: '/marca'
@@ -182,17 +202,9 @@ const rootRouteChildren: RootRouteChildren = {
   FormatoRoute: FormatoRoute,
   FranquiciaRoute: FranquiciaRoute,
   LineaRoute: LineaRoute,
+  ProveedorRoute: ProveedorRoute,
   MarcaIndexRoute: MarcaIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

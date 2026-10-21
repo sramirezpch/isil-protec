@@ -5,10 +5,10 @@ import type {
   LineaListItem,
   UpdateLineaData,
 } from '../../../application/port/linea.repository';
+import type { Linea } from '../../../domain/entities/linea.entity';
 import { db } from '../db/connection';
 import { brandTable } from '../db/schema/brand';
 import { lineaTable } from '../db/schema/linea';
-import { Linea } from '../../../domain/entities/linea.entity';
 import { toDomain } from '../mappers/linea.mapper';
 
 export class LineaRepository implements ILineaRepository {
