@@ -1,4 +1,4 @@
-import { eq, ilike, or } from 'drizzle-orm';
+import { and, eq, ilike, inArray, or } from 'drizzle-orm';
 import { DatabaseError } from 'pg';
 import type {
   CreateProductInput,
@@ -35,12 +35,32 @@ export class ProductRepository implements IProductRepository {
     }
   }
 
+  async findById(id: string): Promise<Product | null> {
+    const [product] = await db
+      .select()
+      .from(productTable)
+      .where(eq(productTable.id, id))
+      .limit(1);
+
+    return product ? toDomain(product) : null;
+  }
+
+  async findActiveIds(ids: string[]): Promise<Set<string>> {
+    if (!ids.length) return new Set();
+    const rows = await db
+      .select({ id: productTable.id })
+      .from(productTable)
+      .where(and(inArray(productTable.id, ids), eq(productTable.active, true)));
+    return new Set(rows.map((r) => r.id));
+  }
+
   async delete(id: string): Promise<void> {
     await db
       .update(productTable)
       .set({ active: false })
       .where(eq(productTable.id, id));
   }
+
   async findAll(query?: string): Promise<Product[]> {
     const products = await db
       .select()
@@ -56,6 +76,7 @@ export class ProductRepository implements IProductRepository {
 
     return products.map(toDomain);
   }
+
   async update(input: UpdateProductInput): Promise<void> {
     const { id, ...rest } = input;
     try {
