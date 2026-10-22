@@ -208,7 +208,7 @@ export class PurchaseService {
       supplierId: input.supplierId,
       arrivalDate,
       currency,
-      exchangeRate.toFixed(4),
+      exchangeRate: exchangeRate.toFixed(4),
       internationalFreight: freight.toFixed(2),
       customsDuties: duties.toFixed(2),
       items: calculatedItems,
@@ -327,7 +327,6 @@ export class PurchaseService {
       this.parseNum(item.unitCostForeign, 'unitCostForeign', {
         min: 0,
         max: 1e9,
-        exclusive: true,
       });
     }
 
