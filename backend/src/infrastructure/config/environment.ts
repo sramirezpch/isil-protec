@@ -5,5 +5,5 @@ export const env = {
   taxIdApiUrl: process.env.TAXID_PRO_API_URL || '',
   isProduction: process.env.NODE_ENV === 'production',
   isStaging: process.env.NODE_ENV === 'staging',
-  isDev: process.env.NODE_ENV === 'development' || true,
+  isDev: process.env.NODE_ENV === 'development',
 };

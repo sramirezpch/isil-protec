@@ -41,9 +41,10 @@ export const Route = createFileRoute("/figura")({
 
 type EstadoFiltro = "" | "activo" | "archivado";
 
-const precioFormat = new Intl.NumberFormat("en-US", {
+// Sale prices are in soles; only purchases use the supplier's currency
+const precioFormat = new Intl.NumberFormat("es-PE", {
 	style: "currency",
-	currency: "USD",
+	currency: "PEN",
 });
 
 // Filters use the gray background from the design

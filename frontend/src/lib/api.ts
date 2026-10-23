@@ -349,3 +349,131 @@ export function deleteSupplier(id: string): Promise<void> {
 		"Error al eliminar el proveedor",
 	);
 }
+
+// Compras: a purchase to a supplier that adds stock once it's received
+export type PurchaseStatus = "PENDING" | "RECEIVED" | "CANCELLED";
+
+// numeric columns come back as strings. Costs in PEN already include the
+// exchange rate; the landed cost also spreads freight and customs duties
+export type PurchaseItem = {
+	id: string;
+	productId: string;
+	quantityOrdered: number;
+	// null until the purchase is received
+	quantityReceived: number | null;
+	unitCostForeign: string;
+	unitCostPen: string;
+	unitLandedCost: string;
+	product?: { id: string; sku: string; name: string };
+};
+
+export type Purchase = {
+	id: string;
+	supplierId: string;
+	supplier?: { id: string; companyName: string };
+	arrivalDate: string | null;
+	status: PurchaseStatus;
+	currency: string;
+	exchangeRate: string;
+	// Both in PEN
+	internationalFreight: string;
+	customsDuties: string;
+	items: PurchaseItem[];
+	createdAt: string;
+	updatedAt: string;
+};
+
+export type PurchaseItemData = {
+	productId: string;
+	quantityOrdered: number;
+	unitCostForeign: number;
+};
+
+export type PurchaseData = {
+	supplierId: string;
+	arrivalDate: string | null;
+	currency: string;
+	exchangeRate: number;
+	internationalFreight: number;
+	customsDuties: number;
+	items: PurchaseItemData[];
+};
+
+export type ReceivePurchaseData = {
+	arrivalDate: string | null;
+	items: { productId: string; quantityReceived: number }[];
+};
+
+export type PurchaseFilters = {
+	// Matches the supplier's name or the currency
+	query?: string;
+	status?: PurchaseStatus;
+	page?: number;
+};
+
+// The backend pages by `limit` but doesn't return the total count
+export async function getPurchases(filters: PurchaseFilters = {}): Promise<{
+	purchases: Purchase[];
+	page: number;
+	limit: number;
+}> {
+	const params = new URLSearchParams();
+	if (filters.query) params.set("query", filters.query);
+	if (filters.status) params.set("status", filters.status);
+	if (filters.page) params.set("page", String(filters.page));
+	const search = params.size > 0 ? `?${params}` : "";
+	const res = await fetch(`${API_URL}/purchase${search}`);
+	if (!res.ok) {
+		throw new Error(`Error al obtener las compras (${res.status})`);
+	}
+	const body: ApiResponse<{
+		purchases: Purchase[];
+		page: number;
+		limit: number;
+	}> = await res.json();
+	return body.data;
+}
+
+export function createPurchase(purchase: PurchaseData): Promise<void> {
+	return sendJson(
+		"POST",
+		"/purchase",
+		purchase,
+		"Error al registrar la compra",
+	);
+}
+
+// Only pending purchases can change; sending `items` replaces all of them
+export function updatePurchase(
+	id: string,
+	changes: Partial<PurchaseData>,
+): Promise<void> {
+	return sendJson(
+		"PATCH",
+		`/purchase/${id}`,
+		changes,
+		"Error al actualizar la compra",
+	);
+}
+
+export function cancelPurchase(id: string): Promise<void> {
+	return sendJson(
+		"POST",
+		`/purchase/${id}/cancel`,
+		undefined,
+		"Error al cancelar la compra",
+	);
+}
+
+// Marks it received and adds each quantityReceived to the figura's stock
+export function receivePurchase(
+	id: string,
+	data: ReceivePurchaseData,
+): Promise<void> {
+	return sendJson(
+		"POST",
+		`/purchase/${id}/receive`,
+		data,
+		"Error al recibir la compra",
+	);
+}

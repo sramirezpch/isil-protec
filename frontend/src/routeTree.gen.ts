@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as ComprasRouteImport } from './routes/compras'
 import { Route as FiguraRouteImport } from './routes/figura'
 import { Route as FormatoRouteImport } from './routes/formato'
 import { Route as FranquiciaRouteImport } from './routes/franquicia'
@@ -26,6 +27,11 @@ const IndexRoute = IndexRouteImport.update({
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComprasRoute = ComprasRouteImport.update({
+  id: '/compras',
+  path: '/compras',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FiguraRoute = FiguraRouteImport.update({
@@ -62,6 +68,7 @@ const MarcaIndexRoute = MarcaIndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/compras': typeof ComprasRoute
   '/figura': typeof FiguraRoute
   '/formato': typeof FormatoRoute
   '/franquicia': typeof FranquiciaRoute
@@ -72,6 +79,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/compras': typeof ComprasRoute
   '/figura': typeof FiguraRoute
   '/formato': typeof FormatoRoute
   '/franquicia': typeof FranquiciaRoute
@@ -83,6 +91,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/compras': typeof ComprasRoute
   '/figura': typeof FiguraRoute
   '/formato': typeof FormatoRoute
   '/franquicia': typeof FranquiciaRoute
@@ -95,6 +104,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/compras'
     | '/figura'
     | '/formato'
     | '/franquicia'
@@ -105,6 +115,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/compras'
     | '/figura'
     | '/formato'
     | '/franquicia'
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
+    | '/compras'
     | '/figura'
     | '/formato'
     | '/franquicia'
@@ -126,6 +138,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  ComprasRoute: typeof ComprasRoute
   FiguraRoute: typeof FiguraRoute
   FormatoRoute: typeof FormatoRoute
   FranquiciaRoute: typeof FranquiciaRoute
@@ -148,6 +161,13 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compras': {
+      id: '/compras'
+      path: '/compras'
+      fullPath: '/compras'
+      preLoaderRoute: typeof ComprasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/figura': {
@@ -198,6 +218,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  ComprasRoute: ComprasRoute,
   FiguraRoute: FiguraRoute,
   FormatoRoute: FormatoRoute,
   FranquiciaRoute: FranquiciaRoute,
@@ -208,3 +229,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

@@ -27,6 +27,12 @@ export default function Sidebar() {
 					Listado de Figuras
 				</Link>
 
+				<p className={groupClass}>Compras</p>
+				<Link to="/compras" className={itemClass}>
+					<span aria-hidden="true">🚚</span>
+					Registro de Compras
+				</Link>
+
 				<p className={groupClass}>Catálogos</p>
 				<Link to="/franquicia" className={itemClass}>
 					<span aria-hidden="true">🏢</span>
