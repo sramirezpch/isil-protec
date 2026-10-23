@@ -39,6 +39,11 @@ export class ClientController {
         .status(200)
         .json(toResponseDto(true, { message: 'Cliente actualizado con éxito' }));
     } catch (error) {
+      if (error instanceof Error && error.message === 'El teléfono ya está registrado') {
+        return res
+          .status(409)
+          .json(toResponseDto(false, { message: error.message }));
+      }
       console.error('Error updating client:', error);
       return res.status(500).json(
         toResponseDto(false, {
