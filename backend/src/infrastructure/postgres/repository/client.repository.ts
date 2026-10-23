@@ -10,6 +10,20 @@ import { db } from '../db/connection';
 import { clientTable } from '../db/schema/client';
 import { toDomain } from '../mappers/client.mapper';
 
+const UNIQUE_VIOLATION = '23505';
+const PHONE_UNIQUE_CONSTRAINT = 'client_phone_unique';
+
+// Drizzle wraps the pg error in `cause`, so check both levels
+const isDuplicatePhone = (error: unknown): boolean => {
+  const pgError =
+    error instanceof DatabaseError ? error : (error as Error)?.cause;
+  return (
+    pgError instanceof DatabaseError &&
+    pgError.code === UNIQUE_VIOLATION &&
+    pgError.constraint === PHONE_UNIQUE_CONSTRAINT
+  );
+};
+
 export class ClientRepository implements IClientRepository {
   async findAll(query?: string): Promise<Client[]> {
     let clients;
@@ -28,14 +42,21 @@ export class ClientRepository implements IClientRepository {
   }
 
   async update(id: string, data: UpdateClientData): Promise<void> {
-    await db.update(clientTable).set(data).where(eq(clientTable.id, id));
+    try {
+      await db.update(clientTable).set(data).where(eq(clientTable.id, id));
+    } catch (error) {
+      if (isDuplicatePhone(error)) {
+        throw new Error('El teléfono ya está registrado');
+      }
+      throw error;
+    }
   }
 
   async create(data: CreateClientData): Promise<void> {
     try {
       await db.insert(clientTable).values(data);
     } catch (error) {
-      if (error instanceof DatabaseError && error.code === '23505') {
+      if (isDuplicatePhone(error)) {
         throw new Error('El teléfono ya está registrado');
       }
       throw error;

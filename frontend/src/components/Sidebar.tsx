@@ -33,6 +33,12 @@ export default function Sidebar() {
 					Registro de Compras
 				</Link>
 
+				<p className={groupClass}>Ventas</p>
+				<Link to="/clientes" className={itemClass}>
+					<span aria-hidden="true">👥</span>
+					Clientes
+				</Link>
+
 				<p className={groupClass}>Catálogos</p>
 				<Link to="/franquicia" className={itemClass}>
 					<span aria-hidden="true">🏢</span>

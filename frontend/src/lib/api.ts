@@ -350,6 +350,65 @@ export function deleteSupplier(id: string): Promise<void> {
 	);
 }
 
+// Only the phone is required, and it's unique among clients
+export type Client = {
+	id: string;
+	phone: string;
+	name: string | null;
+	lastName: string | null;
+	// Stored without the leading "@"
+	aliasTiktok: string | null;
+	active: boolean;
+	createdAt: string;
+	updatedAt: string;
+	deletedAt: string | null;
+};
+
+export type ClientData = {
+	phone: string;
+	name?: string;
+	lastName?: string;
+	aliasTiktok?: string;
+	active: boolean;
+};
+
+// The backend matches `q` against phone, name or TikTok alias
+export async function getClients(query?: string): Promise<Client[]> {
+	const params = query ? `?${new URLSearchParams({ q: query })}` : "";
+	const res = await fetch(`${API_URL}/client${params}`);
+	if (!res.ok) {
+		throw new Error(`Error al obtener clientes (${res.status})`);
+	}
+	const body: ApiResponse<{ clients: Client[] }> = await res.json();
+	return body.data.clients;
+}
+
+export function createClient(client: ClientData): Promise<void> {
+	return sendJson("POST", "/client", client, "Error al registrar el cliente");
+}
+
+export function updateClient(
+	id: string,
+	changes: Partial<ClientData>,
+): Promise<void> {
+	return sendJson(
+		"PATCH",
+		`/client/${id}`,
+		changes,
+		"Error al actualizar el cliente",
+	);
+}
+
+// The backend soft-deletes: the client stays listed as inactive
+export function deleteClient(id: string): Promise<void> {
+	return sendJson(
+		"DELETE",
+		`/client/${id}`,
+		undefined,
+		"Error al eliminar el cliente",
+	);
+}
+
 // Compras: a purchase to a supplier that adds stock once it's received
 export type PurchaseStatus = "PENDING" | "RECEIVED" | "CANCELLED";
 
