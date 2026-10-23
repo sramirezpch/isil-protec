@@ -162,7 +162,7 @@ export default function FiguraFormModal({
 					<div className="mb-5 grid grid-cols-2 gap-3">
 						<div>
 							<label htmlFor="figura-precio" className={labelClass}>
-								Precio de Venta
+								Precio de Venta (S/)
 							</label>
 							<input
 								id="figura-precio"

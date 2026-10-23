@@ -11,6 +11,7 @@ import { PurchaseService } from './application/services/purchase.service';
 import { SupplierService } from './application/services/supplier.service';
 import { env } from './infrastructure/config/environment';
 import { LookupTaxTaxIdValidator } from './infrastructure/external/lookuptax/lookuptax-tax-id.validator';
+import { SkipTaxIdValidator } from './infrastructure/external/skip-tax-id.validator';
 import { BrandRepository } from './infrastructure/postgres/repository/brand.repository';
 import { ClientRepository } from './infrastructure/postgres/repository/client.repository';
 import { FormatoRepository } from './infrastructure/postgres/repository/formato.repository';
@@ -64,10 +65,12 @@ const franchiseController = new FranchiseController(franchiseService);
 const franchiseRouter = new FranchiseRouter(franchiseController);
 
 const supplierRepository = new SupplierRepository();
-const taxIdValidator = new LookupTaxTaxIdValidator(
-  env.taxIdApiKey,
-  env.taxIdApiUrl,
-);
+const taxIdValidator = env.isDev
+  ? new SkipTaxIdValidator()
+  : new LookupTaxTaxIdValidator(env.taxIdApiKey, env.taxIdApiUrl);
+if (env.isDev) {
+  console.warn('Validación de Tax ID desactivada (NODE_ENV=development)');
+}
 const supplierService = new SupplierService(supplierRepository, taxIdValidator);
 const supplierController = new SupplierController(supplierService);
 const supplierRouter = new SupplierRouter(supplierController);
