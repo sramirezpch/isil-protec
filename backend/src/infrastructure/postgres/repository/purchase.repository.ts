@@ -26,6 +26,7 @@ import { productTable } from '../db/schema/product';
 import { purchaseTable } from '../db/schema/purchase';
 import { purchaseItemTable } from '../db/schema/purchaseItem';
 import { supplierTable } from '../db/schema/supplier';
+import { transactionTable } from '../db/schema/transaction';
 import {
   toPurchaseDomain,
   toPurchaseItemDomain,
@@ -208,6 +209,21 @@ export class PurchaseRepository implements IPurchaseRepository {
     });
   }
 
+  async updateStatus(id: string, status: PurchaseStatus): Promise<void> {
+    const [row] = await db
+      .update(purchaseTable)
+      .set({ status, updatedAt: new Date() })
+      .where(
+        and(
+          eq(purchaseTable.id, id),
+          eq(purchaseTable.status, 'CANCELLED'),
+        ),
+      )
+      .returning({ id: purchaseTable.id });
+
+    if (!row) throw new PurchaseStateConflictError();
+  }
+
   async cancel(id: string): Promise<void> {
     await db.transaction(async (tx) => {
       await this.guardedUpdate(tx, id, { status: 'CANCELLED' });
@@ -251,6 +267,21 @@ export class PurchaseRepository implements IPurchaseRepository {
             .where(eq(productTable.id, item.productId));
         }
       }
+
+      const transactionAmount = items.reduce((total, item) => {
+        const quantityReceived = receivedMap.has(item.productId)
+          ? (receivedMap.get(item.productId) as number)
+          : (item.quantityReceived ?? item.quantityOrdered);
+        return total + quantityReceived * Number(item.unitLandedCost);
+      }, 0);
+
+      await tx.insert(transactionTable).values({
+        saleId: null,
+        purchaseId: id,
+        type: 'purchase',
+        amount: transactionAmount.toFixed(2),
+        transactionDate: now,
+      });
     });
   }
 }

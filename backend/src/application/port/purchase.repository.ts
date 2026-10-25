@@ -48,6 +48,7 @@ export interface IPurchaseRepository {
   findById(id: string): Promise<PurchaseWithItems | null>;
   create(data: CreatePurchaseData): Promise<string>;
   update(data: UpdatePurchaseData): Promise<void>;
+  updateStatus(id: string, status: PurchaseStatus): Promise<void>;
   cancel(id: string): Promise<void>;
   receive(
     id: string,

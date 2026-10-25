@@ -18,7 +18,7 @@ export interface SaleIdParams {
 }
 
 export interface UpdateSaleStatusBody {
-  status: 'PENDING_DELIVERY' | 'DELIVERED';
+  status: 'PENDING_PAYMENT' | 'PENDING_DELIVERY' | 'DELIVERED';
 }
 
 export const validateUuid = (id: unknown, fieldName: string): string => {

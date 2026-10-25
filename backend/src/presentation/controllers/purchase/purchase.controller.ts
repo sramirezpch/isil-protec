@@ -17,6 +17,7 @@ import {
   type PurchaseIdParams,
   type ReceivePurchaseBody,
   type UpdatePurchaseBody,
+  type UpdatePurchaseStatusBody,
   sanitizeString,
   validateUuid,
 } from './utils';
@@ -137,6 +138,29 @@ export class PurchaseController {
       return this.handleError(
         error,
         'Ocurrió un error al actualizar la compra',
+        res,
+      );
+    }
+  };
+
+  updateStatus = async (
+    req: Request<PurchaseIdParams, DtoResponse, UpdatePurchaseStatusBody>,
+    res: Response,
+  ): Promise<Response> => {
+    try {
+      const id = validateUuid(req.params.id, 'id');
+      if (req.body?.status !== 'PENDING') {
+        throw new InvalidNumericValueError('status (debe ser PENDING)');
+      }
+
+      await this.purchaseService.updateStatus(id, req.body.status);
+      return res
+        .status(200)
+        .json(toResponseDto(true, { message: 'Estado de compra actualizado con éxito' }));
+    } catch (error) {
+      return this.handleError(
+        error,
+        'Ocurrió un error al actualizar el estado de la compra',
         res,
       );
     }

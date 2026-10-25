@@ -220,6 +220,7 @@ export class SaleRepository implements ISaleRepository {
     await db.transaction(async (tx) => {
       // Determine allowed source statuses for the target status
       const allowedMap: Record<string, SaleStatus[]> = {
+        PENDING_PAYMENT: ['CANCELLED'],
         PENDING_DELIVERY: ['PENDING_PAYMENT'],
         DELIVERED: ['PENDING_DELIVERY'],
       };

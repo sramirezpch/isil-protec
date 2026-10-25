@@ -6,6 +6,7 @@ import {
   PurchaseAlreadyCancelledError,
   PurchaseAlreadyReceivedError,
   PurchaseNotFoundError,
+  PurchaseStateConflictError,
   SupplierNotFoundError,
 } from '../../domain/errors/purchase.errors';
 import type { IProductRepository } from '../port/product.repository';
@@ -218,6 +219,17 @@ export class PurchaseService {
   async cancel(id: string): Promise<void> {
     await this.getModifiablePurchase(id);
     await this.purchaseRepository.cancel(id);
+  }
+
+  async updateStatus(id: string, status: 'PENDING'): Promise<void> {
+    const existing = await this.purchaseRepository.findById(id);
+    if (!existing) throw new PurchaseNotFoundError();
+    if (existing.status === 'RECEIVED') {
+      throw new PurchaseAlreadyReceivedError();
+    }
+    if (existing.status !== 'CANCELLED') throw new PurchaseStateConflictError();
+
+    await this.purchaseRepository.updateStatus(id, status);
   }
 
   async receive(input: ReceivePurchaseInput): Promise<void> {

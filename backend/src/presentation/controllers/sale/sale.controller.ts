@@ -28,7 +28,11 @@ const VALID_STATUSES = new Set([
   'CANCELLED',
 ]);
 
-const VALID_UPDATE_STATUSES = new Set(['PENDING_DELIVERY', 'DELIVERED']);
+const VALID_UPDATE_STATUSES = new Set([
+  'PENDING_PAYMENT',
+  'PENDING_DELIVERY',
+  'DELIVERED',
+]);
 
 export class SaleController {
   constructor(private readonly saleService: SaleService) {}
@@ -114,13 +118,13 @@ export class SaleController {
 
       if (typeof status !== 'string' || !VALID_UPDATE_STATUSES.has(status)) {
         throw new SaleInvalidFieldError(
-          'status (debe ser PENDING_DELIVERY o DELIVERED)',
+          'status (debe ser PENDING_PAYMENT, PENDING_DELIVERY o DELIVERED)',
         );
       }
 
       await this.saleService.updateStatus({
         id,
-        status: status as 'PENDING_DELIVERY' | 'DELIVERED',
+        status: status as UpdateSaleStatusBody['status'],
       });
       return res
         .status(200)
