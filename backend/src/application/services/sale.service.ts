@@ -30,7 +30,7 @@ export interface CreateSaleInput {
 
 export interface UpdateSaleStatusInput {
   id: string;
-  status: 'PENDING_DELIVERY' | 'DELIVERED';
+  status: 'PENDING_PAYMENT' | 'PENDING_DELIVERY' | 'DELIVERED';
 }
 
 interface ParseNumOptions {
@@ -103,6 +103,7 @@ export class SaleService {
     if (!existing) throw new SaleNotFoundError();
 
     const validTransitions: Record<string, string[]> = {
+      CANCELLED: ['PENDING_PAYMENT'],
       PENDING_PAYMENT: ['PENDING_DELIVERY'],
       PENDING_DELIVERY: ['DELIVERED'],
     };

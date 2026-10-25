@@ -14,6 +14,7 @@ export class PurchaseRouter {
     this.router.get('/', this.purchaseController.findAll);
     this.router.get('/:id', this.purchaseController.findById);
     this.router.post('/', this.purchaseController.create);
+    this.router.patch('/:id/status', this.purchaseController.updateStatus);
     this.router.patch('/:id', this.purchaseController.update);
     this.router.post('/:id/cancel', this.purchaseController.cancel);
     this.router.post('/:id/receive', this.purchaseController.receive);

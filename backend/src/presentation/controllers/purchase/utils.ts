@@ -21,6 +21,10 @@ export interface PurchaseIdParams {
   id: string;
 }
 
+export interface UpdatePurchaseStatusBody {
+  status: 'PENDING';
+}
+
 export interface UpdatePurchaseBody {
   supplierId?: string;
   arrivalDate?: string | null;
