@@ -12,6 +12,7 @@ export type CreateClientData = {
 
 export interface IClientRepository {
   findAll(query?: string): Promise<Client[]>;
+  findById(id: string): Promise<Client | null>;
   update(id: string, data: UpdateClientData): Promise<void>;
   create(data: CreateClientData): Promise<void>;
   delete(id: string): Promise<void>;
