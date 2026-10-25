@@ -8,6 +8,7 @@ import { FranchiseService } from './application/services/franchise.service';
 import { LineaService } from './application/services/linea.service';
 import { ProductService } from './application/services/product.service';
 import { PurchaseService } from './application/services/purchase.service';
+import { SaleService } from './application/services/sale.service';
 import { SupplierService } from './application/services/supplier.service';
 import { env } from './infrastructure/config/environment';
 import { LookupTaxTaxIdValidator } from './infrastructure/external/lookuptax/lookuptax-tax-id.validator';
@@ -19,6 +20,7 @@ import { FranchiseRepository } from './infrastructure/postgres/repository/franch
 import { LineaRepository } from './infrastructure/postgres/repository/linea.repository';
 import { ProductRepository } from './infrastructure/postgres/repository/product.repository';
 import { PurchaseRepository } from './infrastructure/postgres/repository/purchase.repository';
+import { SaleRepository } from './infrastructure/postgres/repository/sale.repository';
 import { SupplierRepository } from './infrastructure/postgres/repository/supplier.repository';
 import { BrandController } from './presentation/controllers/brand/brand.controller';
 import { ClientController } from './presentation/controllers/client/client.controller';
@@ -27,6 +29,7 @@ import { FranchiseController } from './presentation/controllers/franchise/franch
 import { LineaController } from './presentation/controllers/linea/linea.controller';
 import { ProductController } from './presentation/controllers/product/product.controller';
 import { PurchaseController } from './presentation/controllers/purchase/purchase.controller';
+import { SaleController } from './presentation/controllers/sale/sale.controller';
 import { SupplierController } from './presentation/controllers/supplier/supplier.controller';
 import { BrandRouter } from './presentation/routes/brand.routes';
 import { ClientRouter } from './presentation/routes/client.routes';
@@ -35,6 +38,7 @@ import { FranchiseRouter } from './presentation/routes/franchise.routes';
 import { LineaRouter } from './presentation/routes/linea.routes';
 import { ProductRouter } from './presentation/routes/product.routes';
 import { PurchaseRouter } from './presentation/routes/purchase.routes';
+import { SaleRouter } from './presentation/routes/sale.routes';
 import { SupplierRouter } from './presentation/routes/supplier.routes';
 
 const app = express();
@@ -98,6 +102,11 @@ const purchaseService = new PurchaseService(
 const purchaseController = new PurchaseController(purchaseService);
 const purchaseRouter = new PurchaseRouter(purchaseController);
 
+const saleRepository = new SaleRepository();
+const saleService = new SaleService(saleRepository, clientRepository, productRepository);
+const saleController = new SaleController(saleService);
+const saleRouter = new SaleRouter(saleController);
+
 app.use('/api/v1/formato', formatoRouter.router);
 app.use('/api/v1/brand', brandRouter.router);
 app.use('/api/v1/franchise', franchiseRouter.router);
@@ -106,6 +115,7 @@ app.use('/api/v1/client', clientRouter.router);
 app.use('/api/v1/product', productRouter.router);
 app.use('/api/v1/supplier', supplierRouter.router);
 app.use('/api/v1/purchase', purchaseRouter.router);
+app.use('/api/v1/sale', saleRouter.router);
 
 app.listen(3000, () => {
   console.log('Server listening on port 3000');
