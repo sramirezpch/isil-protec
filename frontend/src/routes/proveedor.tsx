@@ -99,11 +99,12 @@ function RouteComponent() {
 				</p>
 			)}
 
-			{/* Tabla de Muestra de Proveedores */}
-			<div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+			{/* Tabla con encabezado oscuro e ID */}
+			<div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
 				<table className="w-full border-collapse text-left text-sm text-slate-600">
-					<thead className="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200">
+					<thead className="bg-[#0f172a] text-[11px] font-bold uppercase tracking-wider text-white">
 						<tr>
+							<th className="px-4 py-3">ID</th>
 							<th className="px-4 py-3">Empresa</th>
 							<th className="px-4 py-3">Tax ID / RUC</th>
 							<th className="px-4 py-3">País</th>
@@ -117,7 +118,7 @@ function RouteComponent() {
 						{filtered.length === 0 ? (
 							<tr>
 								<td
-									colSpan={7}
+									colSpan={8}
 									className="px-4 py-6 text-center text-slate-500"
 								>
 									No se encontraron proveedores.
@@ -126,6 +127,9 @@ function RouteComponent() {
 						) : (
 							filtered.map((s) => (
 								<tr key={s.id} className="hover:bg-slate-50 transition">
+									<td className="px-4 py-3 font-mono text-xs text-slate-500">
+										{s.id.slice(0, 8)}...
+									</td>
 									<td className="px-4 py-3 font-semibold text-slate-900">
 										{s.companyName}
 									</td>
