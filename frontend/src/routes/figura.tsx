@@ -1,5 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import FiguraFormModal, {
 	type FiguraFormData,
 } from "../components/FiguraFormModal";
@@ -14,11 +14,21 @@ import {
 	updateProduct,
 } from "../lib/api";
 
+type FiguraSearch = { q?: string };
+
 export const Route = createFileRoute("/figura")({
+	// The search term lives in the URL (?q=) so it survives reloads
+	validateSearch: (search: Record<string, unknown>): FiguraSearch => ({
+		q:
+			typeof search.q === "string" && search.q.trim() !== ""
+				? search.q.trim()
+				: undefined,
+	}),
+	loaderDeps: ({ search: { q } }) => ({ q }),
 	// Franquicias and líneas give names to the ids and fill the form selects
-	loader: async () => {
+	loader: async ({ deps: { q } }) => {
 		const [products, franquicias, lineas] = await Promise.all([
-			getProducts(),
+			getProducts(q),
 			getFranquicias(),
 			getLineas(),
 		]);
@@ -72,22 +82,42 @@ const toProductData = (data: FiguraFormData): ProductData => ({
 
 function RouteComponent() {
 	const { products, franquicias, lineas } = Route.useLoaderData();
+	const { q } = Route.useSearch();
+	const navigate = Route.useNavigate();
 	const router = useRouter();
-	const [query, setQuery] = useState("");
+	const [query, setQuery] = useState(q ?? "");
 	const [franquiciaId, setFranquiciaId] = useState("");
 	const [estado, setEstado] = useState<EstadoFiltro>("");
-	const [creating, setCreating] = useState(false);
+	// SKU suggested to the create modal; null while the modal is closed
+	const [newSku, setNewSku] = useState<string | null>(null);
 	const [editing, setEditing] = useState<Product | null>(null);
 	const [archiveError, setArchiveError] = useState<string | null>(null);
 
+	// Debounce typing before asking the backend to search
+	useEffect(() => {
+		const term = query.trim() || undefined;
+		if (term === q) return;
+		const timeout = setTimeout(
+			() => navigate({ search: { q: term }, replace: true }),
+			300,
+		);
+		return () => clearTimeout(timeout);
+	}, [query, q, navigate]);
+
 	const franquiciaName = (id: string) =>
 		franquicias.find((f) => f.id === id)?.name ?? "—";
+
+	// While searching, `products` is filtered, so the next SKU needs the full list
+	const abrirCreacion = async () => {
+		const all = q ? await getProducts().catch(() => products) : products;
+		setNewSku(nextSku(all));
+	};
 
 	// Mutations don't return the product, so reload the list after each one
 	const crearFigura = async (data: FiguraFormData) => {
 		await createProduct(toProductData(data));
 		await router.invalidate();
-		setCreating(false);
+		setNewSku(null);
 	};
 
 	const editarFigura = async (data: FiguraFormData) => {
@@ -124,11 +154,9 @@ function RouteComponent() {
 		}
 	};
 
-	const term = query.trim().toLowerCase();
+	// Name/SKU search happens in the backend; these two filters stay client-side
 	const filtered = products.filter(
 		(p) =>
-			(p.name.toLowerCase().includes(term) ||
-				p.sku.toLowerCase().includes(term)) &&
 			(franquiciaId === "" || p.franchiseId === franquiciaId) &&
 			(estado === "" || p.active === (estado === "activo")),
 	);
@@ -141,7 +169,7 @@ function RouteComponent() {
 				</h1>
 				<button
 					type="button"
-					onClick={() => setCreating(true)}
+					onClick={abrirCreacion}
 					className="cursor-pointer rounded-md border-0 bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-600"
 				>
 					+ Nueva Figura
@@ -273,13 +301,13 @@ function RouteComponent() {
 				</table>
 			</div>
 
-			{creating && (
+			{newSku !== null && (
 				<FiguraFormModal
 					title="Nueva Figura"
 					submitLabel="Confirmar Registro"
-					suggestedSku={nextSku(products)}
+					suggestedSku={newSku}
 					catalogs={{ franquicias, lineas }}
-					onClose={() => setCreating(false)}
+					onClose={() => setNewSku(null)}
 					onConfirm={crearFigura}
 				/>
 			)}

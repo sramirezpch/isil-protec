@@ -251,8 +251,10 @@ export type ProductData = {
 	lineaId: string;
 };
 
-export async function getProducts(): Promise<Product[]> {
-	const res = await fetch(`${API_URL}/product`);
+// The backend matches `query` against SKU or name (case-insensitive)
+export async function getProducts(query?: string): Promise<Product[]> {
+	const params = query ? `?${new URLSearchParams({ query })}` : "";
+	const res = await fetch(`${API_URL}/product${params}`);
 	if (!res.ok) {
 		throw new Error(`Error al obtener figuras (${res.status})`);
 	}
