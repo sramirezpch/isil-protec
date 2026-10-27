@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 
-// TanStack Router sets data-status="active" on the current route's link
 const itemClass =
 	"flex items-center gap-2 rounded-md px-2.5 py-2 text-[13px] text-slate-300 no-underline transition hover:bg-white/5 hover:text-white data-[status=active]:bg-indigo-500 data-[status=active]:font-semibold data-[status=active]:text-white data-[status=active]:shadow-[0_4px_14px_rgba(99,102,241,0.35)]";
 
@@ -55,6 +54,10 @@ export default function Sidebar() {
 				<Link to="/linea" className={itemClass}>
 					<span aria-hidden="true">📏</span>
 					Líneas
+				</Link>
+				<Link to="/proveedor" className={itemClass}>
+					<span aria-hidden="true">🚚</span>
+					Proveedores
 				</Link>
 			</nav>
 		</aside>
