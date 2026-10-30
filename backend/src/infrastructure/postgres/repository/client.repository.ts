@@ -41,6 +41,15 @@ export class ClientRepository implements IClientRepository {
     return clients.map(toDomain);
   }
 
+  async findById(id: string): Promise<Client | null> {
+    const [row] = await db
+      .select()
+      .from(clientTable)
+      .where(eq(clientTable.id, id))
+      .limit(1);
+    return row ? toDomain(row) : null;
+  }
+
   async update(id: string, data: UpdateClientData): Promise<void> {
     try {
       await db.update(clientTable).set(data).where(eq(clientTable.id, id));
