@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import FiguraFormModal, {
 	type FiguraFormData,
 } from "../components/FiguraFormModal";
+import StockMovementModal from "../components/StockMovementModal";
 import {
 	archiveProduct,
 	createProduct,
@@ -82,6 +83,10 @@ const toProductData = (data: FiguraFormData): ProductData => ({
 
 function RouteComponent() {
 	const { products, franquicias, lineas } = Route.useLoaderData();
+	const [stockMovement, setStockMovement] = useState<{
+		product: Product;
+		type: "IN" | "OUT";
+	} | null>(null);
 	const { q } = Route.useSearch();
 	const navigate = Route.useNavigate();
 	const router = useRouter();
@@ -269,6 +274,20 @@ function RouteComponent() {
 									<div className="flex items-center gap-5">
 										<button
 											type="button"
+											onClick={() => setStockMovement({ product, type: "IN" })}
+											className="cursor-pointer border-0 bg-transparent p-0 text-emerald-600 hover:text-emerald-800"
+										>
+											➕ Entrada
+										</button>
+										<button
+											type="button"
+											onClick={() => setStockMovement({ product, type: "OUT" })}
+											className="cursor-pointer border-0 bg-transparent p-0 text-amber-600 hover:text-amber-800"
+										>
+											➖ Salida
+										</button>
+										<button
+											type="button"
 											onClick={() => setEditing(product)}
 											className="cursor-pointer border-0 bg-transparent p-0 text-indigo-500 hover:text-indigo-700"
 										>
@@ -329,6 +348,21 @@ function RouteComponent() {
 					}}
 					onClose={() => setEditing(null)}
 					onConfirm={editarFigura}
+				/>
+			)}
+			{stockMovement && (
+				<StockMovementModal
+					product={stockMovement.product}
+					type={stockMovement.type}
+					onClose={() => setStockMovement(null)}
+					onConfirm={async (product, quantity, type) => {
+						const newStock =
+							type === "IN"
+								? product.stock + quantity
+								: product.stock - quantity;
+						await updateProduct(product.id, { stock: newStock });
+						await router.invalidate();
+					}}
 				/>
 			)}
 		</main>
