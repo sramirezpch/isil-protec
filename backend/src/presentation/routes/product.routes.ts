@@ -11,8 +11,11 @@ export class ProductRouter {
   }
 
   private initRoutes(): void {
+    this.router.get('/generate-sku', this.productController.generateSku);
     this.router.get('/', this.productController.findAll);
     this.router.post('/', this.productController.create);
+    this.router.get('/:id/label', this.productController.generateLabel);
+    this.router.get('/:id', this.productController.findById);
     this.router.patch('/:id', this.productController.update);
     this.router.delete('/:id', this.productController.delete);
   }

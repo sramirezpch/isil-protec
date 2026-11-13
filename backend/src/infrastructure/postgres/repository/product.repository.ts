@@ -1,4 +1,4 @@
-import { and, eq, ilike, inArray, or } from 'drizzle-orm';
+import { and, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import { DatabaseError } from 'pg';
 import type {
   CreateProductInput,
@@ -14,7 +14,6 @@ import { toDomain } from '../mappers/product.mapper';
 const UNIQUE_VIOLATION = '23505';
 const SKU_UNIQUE_CONSTRAINT = 'product_sku_unique';
 
-// Drizzle wraps the pg error in `cause`, so check both levels
 const isDuplicateSku = (error: unknown): boolean => {
   const pgError =
     error instanceof DatabaseError ? error : (error as Error)?.cause;
@@ -54,6 +53,27 @@ export class ProductRepository implements IProductRepository {
     return new Set(rows.map((r) => r.id));
   }
 
+  async findMaxCorrelativeForPrefix(prefix: string): Promise<number> {
+    const escapedPrefix = prefix.replace(/[%_\\]/g, '\\$&');
+    const pattern = `${escapedPrefix}-%`;
+
+    const [row] = await db
+      .select({
+        max: sql<number>`COALESCE(
+          MAX(
+            CAST(
+              SUBSTRING(${productTable.sku} FROM ${`^${prefix}-(\\d+)$`}) AS INTEGER
+            )
+          ),
+          0
+        )`.as('max'),
+      })
+      .from(productTable)
+      .where(ilike(productTable.sku, pattern));
+
+    return row?.max ?? 0;
+  }
+
   async delete(id: string): Promise<void> {
     await db
       .update(productTable)
@@ -79,11 +99,6 @@ export class ProductRepository implements IProductRepository {
 
   async update(input: UpdateProductInput): Promise<void> {
     const { id, ...rest } = input;
-    try {
-      await db.update(productTable).set(rest).where(eq(productTable.id, id));
-    } catch (error) {
-      if (isDuplicateSku(error)) throw new ProductSkuAlreadyExistsError();
-      throw error;
-    }
+    await db.update(productTable).set(rest).where(eq(productTable.id, id));
   }
 }

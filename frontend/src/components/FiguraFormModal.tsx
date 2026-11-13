@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Franquicia, Linea } from "../lib/api";
+import { generateProductSku } from "../lib/api";
 
 export type FiguraFormData = {
 	sku: string;
 	name: string;
 	price: number;
 	stock: number;
-	// Formato and marca aren't asked: they derive from the franquicia and the línea
 	franchiseId: string;
 	lineaId: string;
 	active: boolean;
@@ -20,8 +20,6 @@ export type FiguraCatalogs = {
 type Props = {
 	title: string;
 	submitLabel: string;
-	// Suggested SKU when creating; when editing it comes from `initial`
-	suggestedSku?: string;
 	catalogs: FiguraCatalogs;
 	initial?: FiguraFormData;
 	onClose: () => void;
@@ -33,22 +31,19 @@ const labelClass = "mb-2 block text-sm font-semibold text-slate-900";
 const fieldClass =
 	"w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100";
 
-// Selects use the gray background from the design
 const selectClass =
 	"w-full rounded-md border border-slate-200 bg-slate-100 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100";
 
-// Mount it only while open (with a `key` per item) so the fields start fresh
 export default function FiguraFormModal({
 	title,
 	submitLabel,
-	suggestedSku = "",
 	catalogs: { franquicias, lineas },
 	initial,
 	onClose,
 	onConfirm,
 }: Props) {
-	const editingSku = initial !== undefined;
-	const [sku, setSku] = useState(initial?.sku ?? suggestedSku);
+	const isEditing = initial !== undefined;
+	const [sku, setSku] = useState(initial?.sku ?? "");
 	const [nombre, setNombre] = useState(initial?.name ?? "");
 	const [precio, setPrecio] = useState(initial ? String(initial.price) : "");
 	const [stock, setStock] = useState(initial ? String(initial.stock) : "");
@@ -57,6 +52,7 @@ export default function FiguraFormModal({
 	const [active, setActive] = useState(initial?.active ?? true);
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const skuDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	useEffect(() => {
 		const onKeyDown = (e: KeyboardEvent) => {
@@ -66,7 +62,22 @@ export default function FiguraFormModal({
 		return () => window.removeEventListener("keydown", onKeyDown);
 	}, [onClose]);
 
-	// Inactive entries stay selectable only if they're the current value
+	useEffect(() => {
+		if (isEditing) return;
+		if (!franquiciaId || !lineaId || !nombre.trim()) return;
+
+		if (skuDebounceRef.current) clearTimeout(skuDebounceRef.current);
+		skuDebounceRef.current = setTimeout(() => {
+			generateProductSku(franquiciaId, lineaId, nombre.trim())
+				.then(setSku)
+				.catch(() => {});
+		}, 400);
+
+		return () => {
+			if (skuDebounceRef.current) clearTimeout(skuDebounceRef.current);
+		};
+	}, [isEditing, franquiciaId, lineaId, nombre]);
+
 	const franquiciaOptions = franquicias.filter(
 		(f) => f.active || f.id === franquiciaId,
 	);
@@ -76,8 +87,10 @@ export default function FiguraFormModal({
 	const skuTrimmed = sku.trim();
 	const precioNum = Number(precio);
 	const stockNum = Number(stock);
+	const skuPattern = /^[A-Z0-9-]{1,50}$/i;
 	const valid =
 		skuTrimmed !== "" &&
+		skuPattern.test(skuTrimmed) &&
 		trimmed !== "" &&
 		precio !== "" &&
 		precioNum >= 0 &&
@@ -136,15 +149,53 @@ export default function FiguraFormModal({
 					<label htmlFor="figura-sku" className={labelClass}>
 						SKU (Código Único)
 					</label>
-					{/* Suggested when creating, fixed once the figura exists */}
 					<input
 						id="figura-sku"
 						value={sku}
-						onChange={(e) => setSku(e.target.value)}
-						readOnly={editingSku}
-						placeholder="SKU-1001"
-						className={`mb-5 w-full rounded-md border border-slate-200 bg-slate-100 px-3.5 py-2.5 text-sm outline-none ${editingSku ? "text-slate-500" : "text-slate-900 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"}`}
+						onChange={(e) => !isEditing && setSku(e.target.value.toUpperCase())}
+						readOnly={isEditing}
+						placeholder="FRA-LIN-NOM-001"
+						maxLength={50}
+						className={`mb-5 w-full rounded-md border border-slate-200 bg-slate-100 px-3.5 py-2.5 text-sm outline-none ${isEditing ? "text-slate-500" : "text-slate-900 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"}`}
 					/>
+
+					<label htmlFor="figura-franquicia" className={labelClass}>
+						Franquicia
+					</label>
+					<select
+						id="figura-franquicia"
+						value={franquiciaId}
+						onChange={(e) => setFranquiciaId(e.target.value)}
+						className={`mb-5 ${selectClass} ${franquiciaId ? "text-slate-700" : "text-slate-500"}`}
+					>
+						<option value="" disabled>
+							Seleccione una franquicia...
+						</option>
+						{franquiciaOptions.map((f) => (
+							<option key={f.id} value={f.id}>
+								{f.name}
+							</option>
+						))}
+					</select>
+
+					<label htmlFor="figura-linea" className={labelClass}>
+						Línea
+					</label>
+					<select
+						id="figura-linea"
+						value={lineaId}
+						onChange={(e) => setLineaId(e.target.value)}
+						className={`mb-5 ${selectClass} ${lineaId ? "text-slate-700" : "text-slate-500"}`}
+					>
+						<option value="" disabled>
+							Seleccione una línea...
+						</option>
+						{lineaOptions.map((l) => (
+							<option key={l.id} value={l.id}>
+								{l.name}
+							</option>
+						))}
+					</select>
 
 					<label htmlFor="figura-nombre" className={labelClass}>
 						Nombre de la Figura
@@ -193,44 +244,6 @@ export default function FiguraFormModal({
 							/>
 						</div>
 					</div>
-
-					<label htmlFor="figura-franquicia" className={labelClass}>
-						Franquicia
-					</label>
-					<select
-						id="figura-franquicia"
-						value={franquiciaId}
-						onChange={(e) => setFranquiciaId(e.target.value)}
-						className={`mb-5 ${selectClass} ${franquiciaId ? "text-slate-700" : "text-slate-500"}`}
-					>
-						<option value="" disabled>
-							Seleccione una franquicia...
-						</option>
-						{franquiciaOptions.map((f) => (
-							<option key={f.id} value={f.id}>
-								{f.name}
-							</option>
-						))}
-					</select>
-
-					<label htmlFor="figura-linea" className={labelClass}>
-						Línea
-					</label>
-					<select
-						id="figura-linea"
-						value={lineaId}
-						onChange={(e) => setLineaId(e.target.value)}
-						className={`${selectClass} ${lineaId ? "text-slate-700" : "text-slate-500"}`}
-					>
-						<option value="" disabled>
-							Seleccione una línea...
-						</option>
-						{lineaOptions.map((l) => (
-							<option key={l.id} value={l.id}>
-								{l.name}
-							</option>
-						))}
-					</select>
 
 					<label htmlFor="figura-estado" className={`mt-5 ${labelClass}`}>
 						Estado

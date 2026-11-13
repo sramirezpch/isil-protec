@@ -4,3 +4,10 @@ export class ProductSkuAlreadyExistsError extends Error {
     this.name = 'ProductSkuAlreadyExistsError';
   }
 }
+
+export class ProductNotFound extends Error {
+  constructor() {
+    super('Figura no encontrada');
+    this.name = 'ProductNotFound';
+  }
+}
