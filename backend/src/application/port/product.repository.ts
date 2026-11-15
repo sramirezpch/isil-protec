@@ -11,13 +11,14 @@ export interface CreateProductInput {
 
 export type UpdateProductInput = { id: string } & Omit<
   Partial<Product>,
-  'createdAt' | 'updatedAt' | 'deletedAt'
+  'createdAt' | 'updatedAt' | 'deletedAt' | 'sku'
 >;
 
 export interface IProductRepository {
   findAll(query?: string): Promise<Product[]>;
   findById(id: string): Promise<Product | null>;
   findActiveIds(ids: string[]): Promise<Set<string>>;
+  findMaxCorrelativeForPrefix(prefix: string): Promise<number>;
   update(input: UpdateProductInput): Promise<void>;
   create(input: CreateProductInput): Promise<void>;
   delete(id: string): Promise<void>;

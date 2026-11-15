@@ -538,3 +538,53 @@ export function receivePurchase(
 		"Error al recibir la compra",
 	);
 }
+
+export async function getProduct(id: string): Promise<Product> {
+	const res = await fetch(`${API_URL}/product/${id}`);
+	if (!res.ok) {
+		const body: ApiResponse<{ message?: string }> | null = await res
+			.json()
+			.catch(() => null);
+		throw new Error(
+			body?.data.message ?? `Error al obtener la figura (${res.status})`,
+		);
+	}
+	const body: ApiResponse<{ product: Product }> = await res.json();
+	return body.data.product;
+}
+
+export async function generateProductSku(
+	franchiseId: string,
+	lineaId: string,
+	name: string,
+): Promise<string> {
+	const params = new URLSearchParams({ franchiseId, lineaId, name });
+	const res = await fetch(`${API_URL}/product/generate-sku?${params}`);
+	if (!res.ok) {
+		const body: ApiResponse<{ message?: string }> | null = await res
+			.json()
+			.catch(() => null);
+		throw new Error(
+			body?.data.message ?? `Error al generar SKU (${res.status})`,
+		);
+	}
+	const body: ApiResponse<{ sku: string }> = await res.json();
+	return body.data.sku;
+}
+
+export async function downloadProductLabel(
+	id: string,
+	quantity: number,
+): Promise<Blob> {
+	const params = new URLSearchParams({ quantity: String(quantity) });
+	const res = await fetch(`${API_URL}/product/${id}/label?${params}`);
+	if (!res.ok) {
+		const body: ApiResponse<{ message?: string }> | null = await res
+			.json()
+			.catch(() => null);
+		throw new Error(
+			body?.data.message ?? `Error al generar etiquetas (${res.status})`,
+		);
+	}
+	return res.blob();
+}

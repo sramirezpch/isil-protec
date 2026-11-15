@@ -1,5 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import FiguraDetailModal from "../components/FiguraDetailModal";
 import FiguraFormModal, {
 	type FiguraFormData,
 } from "../components/FiguraFormModal";
@@ -62,15 +63,6 @@ const precioFormat = new Intl.NumberFormat("es-PE", {
 const filterClass =
 	"rounded-md border border-slate-200 bg-slate-100 px-3.5 py-2.5 text-sm text-slate-700 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100";
 
-// Suggests the next "SKU-<n>" after the highest existing one
-const nextSku = (products: Product[]) => {
-	const numbers = products
-		.map((p) => /^SKU-(\d+)$/.exec(p.sku)?.[1])
-		.filter((n) => n !== undefined)
-		.map(Number);
-	return `SKU-${Math.max(1000, ...numbers) + 1}`;
-};
-
 const toProductData = (data: FiguraFormData): ProductData => ({
 	sku: data.sku,
 	name: data.name,
@@ -93,9 +85,9 @@ function RouteComponent() {
 	const [query, setQuery] = useState(q ?? "");
 	const [franquiciaId, setFranquiciaId] = useState("");
 	const [estado, setEstado] = useState<EstadoFiltro>("");
-	// SKU suggested to the create modal; null while the modal is closed
-	const [newSku, setNewSku] = useState<string | null>(null);
+	const [isCreating, setIsCreating] = useState(false);
 	const [editing, setEditing] = useState<Product | null>(null);
+	const [viewing, setViewing] = useState<Product | null>(null);
 	const [archiveError, setArchiveError] = useState<string | null>(null);
 
 	// Debounce typing before asking the backend to search
@@ -112,22 +104,16 @@ function RouteComponent() {
 	const franquiciaName = (id: string) =>
 		franquicias.find((f) => f.id === id)?.name ?? "—";
 
-	// While searching, `products` is filtered, so the next SKU needs the full list
-	const abrirCreacion = async () => {
-		const all = q ? await getProducts().catch(() => products) : products;
-		setNewSku(nextSku(all));
-	};
-
 	// Mutations don't return the product, so reload the list after each one
 	const crearFigura = async (data: FiguraFormData) => {
 		await createProduct(toProductData(data));
 		await router.invalidate();
-		setNewSku(null);
+		setIsCreating(false);
 	};
 
 	const editarFigura = async (data: FiguraFormData) => {
 		if (!editing) return;
-		// PATCH only the fields that actually changed
+		// PATCH only the fields that actually changed (sku is not editable)
 		const next = toProductData(data);
 		const changes: Partial<ProductData> = {};
 		if (next.name !== editing.name) changes.name = next.name;
@@ -174,7 +160,7 @@ function RouteComponent() {
 				</h1>
 				<button
 					type="button"
-					onClick={abrirCreacion}
+					onClick={() => setIsCreating(true)}
 					className="cursor-pointer rounded-md border-0 bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-600"
 				>
 					+ Nueva Figura
@@ -229,7 +215,7 @@ function RouteComponent() {
 							<th className="px-4 py-3.5 font-semibold">Estado</th>
 							<th className="px-4 py-3.5 font-semibold">Precio</th>
 							<th className="px-4 py-3.5 font-semibold">Stock</th>
-							<th className="w-48 px-4 py-3.5 font-semibold">Acciones</th>
+							<th className="w-56 px-4 py-3.5 font-semibold">Acciones</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -238,7 +224,9 @@ function RouteComponent() {
 								key={product.id}
 								className="border-t border-slate-200 first:border-t-0"
 							>
-								<td className="px-4 py-3.5 text-slate-700">{product.sku}</td>
+								<td className="px-4 py-3.5 font-mono text-xs text-slate-700">
+									{product.sku}
+								</td>
 								<td className="px-4 py-3.5">
 									<div className="font-bold text-slate-900">{product.name}</div>
 									<div className="text-xs text-slate-500">
@@ -271,7 +259,14 @@ function RouteComponent() {
 									)}
 								</td>
 								<td className="px-4 py-3.5">
-									<div className="flex items-center gap-5">
+									<div className="flex items-center gap-4 text-xs font-medium">
+										<button
+											type="button"
+											onClick={() => setViewing(product)}
+											className="cursor-pointer border-0 bg-transparent p-0 text-slate-600 hover:text-indigo-600"
+										>
+											👁️ Detalle
+										</button>
 										<button
 											type="button"
 											onClick={() => setStockMovement({ product, type: "IN" })}
@@ -320,13 +315,12 @@ function RouteComponent() {
 				</table>
 			</div>
 
-			{newSku !== null && (
+			{isCreating && (
 				<FiguraFormModal
 					title="Nueva Figura"
 					submitLabel="Confirmar Registro"
-					suggestedSku={newSku}
 					catalogs={{ franquicias, lineas }}
-					onClose={() => setNewSku(null)}
+					onClose={() => setIsCreating(false)}
 					onConfirm={crearFigura}
 				/>
 			)}
@@ -350,6 +344,16 @@ function RouteComponent() {
 					onConfirm={editarFigura}
 				/>
 			)}
+
+			{viewing && (
+				<FiguraDetailModal
+					key={viewing.id}
+					product={viewing}
+					catalogs={{ franquicias, lineas }}
+					onClose={() => setViewing(null)}
+				/>
+			)}
+
 			{stockMovement && (
 				<StockMovementModal
 					product={stockMovement.product}
