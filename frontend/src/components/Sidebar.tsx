@@ -37,6 +37,10 @@ export default function Sidebar() {
 					<span aria-hidden="true">👥</span>
 					Clientes
 				</Link>
+				<Link to="/reservas" className={itemClass}>
+					<span aria-hidden="true">🛍️</span>
+					Reservas
+				</Link>
 
 				<p className={groupClass}>Catálogos</p>
 				<Link to="/franquicia" className={itemClass}>

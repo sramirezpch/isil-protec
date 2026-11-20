@@ -588,3 +588,71 @@ export async function downloadProductLabel(
 	}
 	return res.blob();
 }
+
+export type ReservationDiscountType = "PORCENTAJE" | "MONTO";
+
+export type ReservationItem = {
+	id: string;
+	productId: string;
+	quantity: number;
+	cantidadBloqueada: number;
+	unitPrice: string;
+	discountType: ReservationDiscountType | null;
+	discountValue: string | null;
+	lineTotal: string;
+	product?: { id: string; sku: string; name: string };
+};
+
+export type Reservation = {
+	id: string;
+	clientId: string;
+	client?: {
+		id: string;
+		name: string | null;
+		lastName: string | null;
+		phone: string;
+	};
+	dueDate: string;
+	status: "VIGENTE";
+	type: "RESERVA" | "PREVENTA";
+	totalAmount: string;
+	items: ReservationItem[];
+	createdAt: string;
+	updatedAt: string;
+};
+
+export type ReservationItemData = {
+	productId: string;
+	quantity: number | string;
+	discountType?: ReservationDiscountType | null;
+	discountValue?: string | null;
+};
+
+export type ReservationData = {
+	clientId: string;
+	dueDate: string;
+	items: ReservationItemData[];
+};
+
+export async function getReservations(): Promise<Reservation[]> {
+	const res = await fetch(`${API_URL}/reservation`);
+	if (!res.ok) {
+		const body: ApiResponse<{ message?: string }> | null = await res
+			.json()
+			.catch(() => null);
+		throw new Error(
+			body?.data.message ?? `Error al obtener reservas (${res.status})`,
+		);
+	}
+	const body: ApiResponse<{ reservations: Reservation[] }> = await res.json();
+	return body.data.reservations;
+}
+
+export function createReservation(reservation: ReservationData): Promise<void> {
+	return sendJson(
+		"POST",
+		"/reservation",
+		reservation,
+		"Error al registrar la reserva",
+	);
+}
