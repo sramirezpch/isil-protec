@@ -91,3 +91,10 @@ export class InsufficientStockError extends Error {
     this.name = 'InsufficientStockError';
   }
 }
+
+export class SaleStockInsufficientError extends InsufficientStockError {
+  constructor(figureName: string, available: number, requested: number) {
+    super(`${figureName} (disponible: ${available}, solicitado: ${requested})`);
+    this.name = 'SaleStockInsufficientError';
+  }
+}

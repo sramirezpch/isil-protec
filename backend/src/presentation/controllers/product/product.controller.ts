@@ -140,6 +140,14 @@ export class ProductController {
     res: Response,
   ) => {
     try {
+      if (req.body.stock !== undefined && req.body.stock < 0) {
+        return res.status(400).json(
+          toResponseDto(false, {
+            message: 'El stock no puede ser negativo',
+          }),
+        );
+      }
+
       await this.productService.update({ id: req.params.id, ...req.body });
 
       return res

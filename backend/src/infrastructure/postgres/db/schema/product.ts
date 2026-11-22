@@ -1,5 +1,7 @@
+import { sql } from 'drizzle-orm';
 import {
   boolean,
+  check,
   integer,
   numeric,
   pgTable,
@@ -12,24 +14,30 @@ import { franchiseTable } from './franchise';
 import { lineaTable } from './linea';
 import { auditColumns } from './utils';
 
-export const productTable = pgTable('product', {
-  id: uuid()
-    .primaryKey()
-    .defaultRandom()
-    .$defaultFn(() => uuidv7()),
-  sku: text().notNull().unique(),
-  name: varchar().notNull(),
-  price: numeric({ precision: 10, scale: 2 }).notNull(),
-  stock: integer().notNull(),
-  active: boolean().default(true).notNull(),
-  franchiseId: uuid()
-    .notNull()
-    .references(() => franchiseTable.id),
-  lineaId: uuid()
-    .notNull()
-    .references(() => lineaTable.id),
-  ...auditColumns,
-});
+export const productTable = pgTable(
+  'product',
+  {
+    id: uuid()
+      .primaryKey()
+      .defaultRandom()
+      .$defaultFn(() => uuidv7()),
+    sku: text().notNull().unique(),
+    name: varchar().notNull(),
+    price: numeric({ precision: 10, scale: 2 }).notNull(),
+    stock: integer().notNull(),
+    active: boolean().default(true).notNull(),
+    franchiseId: uuid()
+      .notNull()
+      .references(() => franchiseTable.id),
+    lineaId: uuid()
+      .notNull()
+      .references(() => lineaTable.id),
+    ...auditColumns,
+  },
+  (table) => [
+    check('product_stock_nonnegative_check', sql`${table.stock} >= 0`),
+  ],
+);
 
 export type ProductModel = typeof productTable.$inferSelect;
 export type NewProductModel = typeof productTable.$inferInsert;
