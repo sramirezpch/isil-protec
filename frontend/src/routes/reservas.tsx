@@ -1,16 +1,20 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import ReservationCancellationModal from "../components/ReservationCancellationModal";
+import ReservationConversionModal from "../components/ReservationConversionModal";
 import ReservationDetailModal from "../components/ReservationDetailModal";
 import ReservationFormModal from "../components/ReservationFormModal";
 import {
 	cancelReservation,
+	convertReservationToSale,
 	createReservation,
 	getClients,
 	getProducts,
 	getReservations,
 	type Reservation,
+	type ReservationConversionResponse,
 	type ReservationData,
+	type ReservationPaymentMethod,
 } from "../lib/api";
 
 export const Route = createFileRoute("/reservas")({
@@ -54,6 +58,8 @@ function RouteComponent() {
 		useState<Reservation | null>(null);
 	const [reservationToCancel, setReservationToCancel] =
 		useState<Reservation | null>(null);
+	const [reservationToConvert, setReservationToConvert] =
+		useState<Reservation | null>(null);
 	const [refreshError, setRefreshError] = useState<string | null>(null);
 
 	const handleCreate = async (data: ReservationData) => {
@@ -92,6 +98,30 @@ function RouteComponent() {
 					: "La reserva se canceló, pero no se pudo actualizar reservas y stock.",
 			);
 		}
+	};
+
+	const handleConvert = async (
+		paymentMethod: ReservationPaymentMethod | undefined,
+	): Promise<ReservationConversionResponse> => {
+		if (!reservationToConvert) {
+			throw new Error("No se seleccionó una reserva para convertir.");
+		}
+
+		const result = await convertReservationToSale(
+			reservationToConvert.id,
+			paymentMethod ? { paymentMethod } : {},
+		);
+		try {
+			await router.invalidate();
+			setRefreshError(null);
+		} catch (error) {
+			setRefreshError(
+				error instanceof Error
+					? `La reserva se convirtió, pero no se pudo actualizar reservas y stock: ${error.message}`
+					: "La reserva se convirtió, pero no se pudo actualizar reservas y stock.",
+			);
+		}
+		return result;
 	};
 
 	return (
@@ -156,12 +186,16 @@ function RouteComponent() {
 											className={`rounded px-2 py-1 text-xs font-semibold ${
 												reservation.status === "VIGENTE"
 													? "bg-emerald-100 text-emerald-700"
-													: "bg-slate-200 text-slate-700"
+													: reservation.status === "CONVERTIDA"
+														? "bg-violet-100 text-violet-700"
+														: "bg-slate-200 text-slate-700"
 											}`}
 										>
 											{reservation.status === "VIGENTE"
 												? "Vigente"
-												: "Cancelada"}
+												: reservation.status === "CONVERTIDA"
+													? "Convertida"
+													: "Cancelada"}
 										</span>
 									</td>
 									<td className="px-4 py-3.5">
@@ -230,16 +264,28 @@ function RouteComponent() {
 												Ver detalle
 											</button>
 											{reservation.status === "VIGENTE" && (
-												<button
-													type="button"
-													onClick={() => {
-														setRefreshError(null);
-														setReservationToCancel(reservation);
-													}}
-													className="cursor-pointer rounded-md border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
-												>
-													Cancelar reserva
-												</button>
+												<>
+													<button
+														type="button"
+														onClick={() => {
+															setRefreshError(null);
+															setReservationToConvert(reservation);
+														}}
+														className="cursor-pointer rounded-md border border-indigo-200 bg-white px-3 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
+													>
+														Liquidar y convertir
+													</button>
+													<button
+														type="button"
+														onClick={() => {
+															setRefreshError(null);
+															setReservationToCancel(reservation);
+														}}
+														className="cursor-pointer rounded-md border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
+													>
+														Cancelar reserva
+													</button>
+												</>
 											)}
 										</div>
 									</td>
@@ -274,6 +320,18 @@ function RouteComponent() {
 					reservation={selectedReservation}
 					onClose={() => setSelectedReservation(null)}
 					onUpdated={handlePaymentsUpdated}
+					onConvert={(reservation) => {
+						setSelectedReservation(null);
+						setReservationToConvert(reservation);
+					}}
+				/>
+			)}
+
+			{reservationToConvert && (
+				<ReservationConversionModal
+					reservation={reservationToConvert}
+					onClose={() => setReservationToConvert(null)}
+					onConfirm={handleConvert}
 				/>
 			)}
 

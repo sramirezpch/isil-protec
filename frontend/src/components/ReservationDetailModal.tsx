@@ -12,6 +12,7 @@ type Props = {
 	reservation: Reservation;
 	onClose: () => void;
 	onUpdated: () => Promise<void>;
+	onConvert: (reservation: Reservation) => void;
 };
 
 const paymentMethods: { value: ReservationPaymentMethod; label: string }[] = [
@@ -31,10 +32,26 @@ const formatDate = (value: string): string =>
 		timeStyle: "short",
 	}).format(new Date(value));
 
+const saleStatusLabel = (
+	status: NonNullable<Reservation["sale"]>["status"],
+) => {
+	switch (status) {
+		case "PENDING_PAYMENT":
+			return "Pendiente de pago";
+		case "PENDING_DELIVERY":
+			return "Pendiente de entrega";
+		case "DELIVERED":
+			return "Entregada";
+		case "CANCELLED":
+			return "Cancelada";
+	}
+};
+
 export default function ReservationDetailModal({
 	reservation,
 	onClose,
 	onUpdated,
+	onConvert,
 }: Props) {
 	const [summary, setSummary] = useState<ReservationPaymentHistory | null>(
 		null,
@@ -137,14 +154,35 @@ export default function ReservationDetailModal({
 					>
 						Detalle de reserva
 					</h2>
-					<button
-						type="button"
-						onClick={onClose}
-						disabled={submitting}
-						className="cursor-pointer border-0 bg-transparent text-slate-500 hover:text-slate-800"
-					>
-						Cerrar
-					</button>
+					<div className="flex items-center gap-3">
+						{reservation.status === "VIGENTE" && (
+							<button
+								type="button"
+								onClick={() =>
+									onConvert({
+										...reservation,
+										totalAmount:
+											summary?.totalAmount ?? reservation.totalAmount,
+										totalPaid: summary?.totalPaid ?? reservation.totalPaid,
+										pendingBalance:
+											summary?.pendingBalance ?? reservation.pendingBalance,
+									})
+								}
+								disabled={submitting}
+								className="cursor-pointer rounded-md border-0 bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+							>
+								Liquidar y convertir a venta
+							</button>
+						)}
+						<button
+							type="button"
+							onClick={onClose}
+							disabled={submitting}
+							className="cursor-pointer border-0 bg-transparent text-slate-500 hover:text-slate-800"
+						>
+							Cerrar
+						</button>
+					</div>
 				</div>
 
 				{error && (
@@ -198,14 +236,37 @@ export default function ReservationDetailModal({
 								className={`inline-block rounded px-2 py-1 text-xs font-semibold ${
 									reservation.status === "VIGENTE"
 										? "bg-emerald-100 text-emerald-700"
-										: "bg-slate-200 text-slate-700"
+										: reservation.status === "CONVERTIDA"
+											? "bg-violet-100 text-violet-700"
+											: "bg-slate-200 text-slate-700"
 								}`}
 							>
-								{reservation.status === "VIGENTE" ? "Vigente" : "Cancelada"}
+								{reservation.status === "VIGENTE"
+									? "Vigente"
+									: reservation.status === "CONVERTIDA"
+										? "Convertida"
+										: "Cancelada"}
 							</span>
 						</dd>
 					</div>
 				</dl>
+
+				{reservation.sale && (
+					<dl className="mb-6 grid gap-3 rounded-md border border-violet-200 bg-violet-50 p-4 sm:grid-cols-2">
+						<div>
+							<dt className="text-sm text-violet-700">Venta asociada</dt>
+							<dd className="m-0 break-all font-semibold text-violet-950">
+								{reservation.sale.id}
+							</dd>
+						</div>
+						<div>
+							<dt className="text-sm text-violet-700">Estado de la venta</dt>
+							<dd className="m-0 font-semibold text-violet-950">
+								{saleStatusLabel(reservation.sale.status)}
+							</dd>
+						</div>
+					</dl>
+				)}
 
 				<h3 className="mb-2 text-sm font-semibold text-slate-800">
 					Figuras de la reserva

@@ -10,6 +10,7 @@ import type {
   ReservationPaymentBalance,
   ReservationPaymentMethod,
 } from '../../domain/entities/reservationPayment.entity';
+import type { SaleWithItems } from '../../domain/entities/sale.entity';
 
 export interface CreateReservationItemData {
   productId: string;
@@ -40,6 +41,23 @@ export interface CancelReservationData {
   confirmWithPayments: boolean;
 }
 
+export interface ConvertReservationData {
+  id: string;
+  paymentMethod: ReservationPaymentMethod | null;
+}
+
+export interface ReservationConversionResult {
+  reservation: {
+    id: string;
+    status: 'CONVERTIDA';
+    totalAmount: string;
+    totalPaid: string;
+    pendingBalance: string;
+  };
+  sale: SaleWithItems;
+  payment: ReservationPayment | null;
+}
+
 export interface IReservationRepository {
   findAll(): Promise<ReservationWithPaymentTotal[]>;
   create(data: CreateReservationData): Promise<ReservationWithItems>;
@@ -53,4 +71,7 @@ export interface IReservationRepository {
     totalPaidBefore: string;
   }>;
   cancel(data: CancelReservationData): Promise<Reservation>;
+  convertToSale(
+    data: ConvertReservationData,
+  ): Promise<ReservationConversionResult>;
 }

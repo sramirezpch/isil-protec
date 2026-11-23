@@ -29,8 +29,8 @@ import { clientTable } from '../db/schema/client';
 import { productTable } from '../db/schema/product';
 import { saleTable } from '../db/schema/sale';
 import { saleItemTable } from '../db/schema/saleItem';
-import { transactionTable } from '../db/schema/transaction';
 import { toSaleDomain, toSaleItemDomain } from '../mappers/sale.mapper';
+import { insertSaleTransaction } from './sale-transaction.repository';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -44,7 +44,7 @@ export class SaleRepository implements ISaleRepository {
           name: clientTable.name,
           lastName: clientTable.lastName,
           phone: clientTable.phone,
-          aliasTiktok: clientTable.aliasTiktok
+          aliasTiktok: clientTable.aliasTiktok,
         },
       })
       .from(saleTable)
@@ -111,8 +111,7 @@ export class SaleRepository implements ISaleRepository {
     offset = 0,
   ): Promise<SaleWithItems[]> {
     const conditions: SQL[] = [];
-    if (status)
-      conditions.push(eq(saleTable.status, status as SaleStatus));
+    if (status) conditions.push(eq(saleTable.status, status as SaleStatus));
     if (query) {
       const sanitized = query
         .trim()
@@ -122,7 +121,7 @@ export class SaleRepository implements ISaleRepository {
         or(
           ilike(clientTable.name, `%${sanitized}%`),
           ilike(clientTable.phone, `%${sanitized}%`),
-          ilike(clientTable.aliasTiktok, `%${sanitized}%`)
+          ilike(clientTable.aliasTiktok, `%${sanitized}%`),
         ) as SQL,
       );
     }
@@ -207,10 +206,7 @@ export class SaleRepository implements ISaleRepository {
           updatedAt: new Date(),
         })
         .where(
-          and(
-            eq(saleTable.id, id),
-            eq(saleTable.status, 'PENDING_PAYMENT'),
-          ),
+          and(eq(saleTable.id, id), eq(saleTable.status, 'PENDING_PAYMENT')),
         )
         .returning({ id: saleTable.id });
 
@@ -302,13 +298,7 @@ export class SaleRepository implements ISaleRepository {
 
       // When transitioning to PENDING_DELIVERY, register a sale transaction
       if (status === 'PENDING_DELIVERY') {
-        await tx.insert(transactionTable).values({
-          saleId: id,
-          purchaseId: null,
-          type: 'sale',
-          amount: sale.totalAmount,
-          transactionDate: new Date(),
-        });
+        await insertSaleTransaction(tx, id, sale.totalAmount);
 
         for (const product of products) {
           const quantity = quantityByProduct.get(product.id) ?? 0;

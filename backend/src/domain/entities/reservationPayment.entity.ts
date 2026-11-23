@@ -2,6 +2,8 @@ import {
   AbonoExcedeSaldoError,
   ReservationInvalidFieldError,
   ReservationPaymentAmountInvalidError,
+  ReservationPaymentBalanceInvalidError,
+  ReservationPaymentMethodRequiredError,
 } from '../errors/reservation.errors';
 import type { ReservationStatus } from './reservation.entity';
 
@@ -91,6 +93,33 @@ export function validateReservationPaymentAmount(
     throw new AbonoExcedeSaldoError();
   }
   return amountCents;
+}
+
+export function prepareReservationConversionPayment(
+  totalAmount: string,
+  totalPaid: string,
+  paymentMethod: ReservationPaymentMethod | null,
+): { amount: string; paymentMethod: ReservationPaymentMethod } | null {
+  const totalCents = parseMoneyCents(totalAmount, 'totalAmount');
+  const paidCents = parseMoneyCents(totalPaid, 'totalPaid');
+  const pendingCents = totalCents - paidCents;
+
+  if (pendingCents < 0n) {
+    throw new ReservationPaymentBalanceInvalidError();
+  }
+  if (pendingCents === 0n) return null;
+  if (!paymentMethod) throw new ReservationPaymentMethodRequiredError();
+
+  return {
+    amount: formatMoneyCents(
+      validateReservationPaymentAmount(
+        formatMoneyCents(pendingCents),
+        totalAmount,
+        totalPaid,
+      ),
+    ),
+    paymentMethod,
+  };
 }
 
 export function calculateReservationPaymentSummary(

@@ -5,22 +5,29 @@ import {
   DuplicateReservationItemError,
   EmptyReservationItemsError,
   ReservationAlreadyCancelledError,
+  ReservationAlreadyConvertedError,
   ReservationCancellationConfirmationRequiredError,
   ReservationCancellationReasonInvalidError,
   ReservationCannotBeCancelledError,
+  ReservationCannotBeConvertedError,
   ReservationClientNotFoundError,
+  ReservationConversionStockInsufficientError,
+  ReservationConvertedCannotBeCancelledError,
   ReservationDeadlineInvalidError,
   ReservationInvalidFieldError,
   ReservationNotFoundError,
   ReservationNotVigenteError,
   ReservationPaymentAmountInvalidError,
+  ReservationPaymentBalanceInvalidError,
   ReservationPaymentMethodInvalidError,
+  ReservationPaymentMethodRequiredError,
   ReservationPriceChangedError,
   ReservationProductNotFoundError,
 } from '../../../domain/errors/reservation.errors';
 import { type DtoResponse, toResponseDto } from '../../../utils';
 import type {
   CancelReservationBody,
+  ConvertReservationBody,
   CreateReservationBody,
   CreateReservationPaymentBody,
   ReservationIdParams,
@@ -125,6 +132,38 @@ export class ReservationController {
     }
   };
 
+  convertToSale = async (
+    req: Request<
+      ReservationIdParams,
+      DtoResponse,
+      ConvertReservationBody | undefined
+    >,
+    res: Response,
+  ): Promise<Response> => {
+    try {
+      const id = validateUuid(req.params.id, 'id');
+      const body = req.body;
+      if (
+        body !== undefined &&
+        (!body || typeof body !== 'object' || Array.isArray(body))
+      ) {
+        throw new ReservationInvalidFieldError('body');
+      }
+
+      const result = await this.reservationService.convertToSale({
+        id,
+        paymentMethod: body?.paymentMethod,
+      });
+      return res.status(201).json(toResponseDto(true, { ...result }));
+    } catch (error) {
+      return this.handleError(
+        error,
+        'Ocurrió un error al liquidar y convertir la reserva',
+        res,
+      );
+    }
+  };
+
   cancel = async (
     req: Request<ReservationIdParams, DtoResponse, CancelReservationBody>,
     res: Response,
@@ -173,6 +212,7 @@ export class ReservationController {
       error instanceof ReservationInvalidFieldError ||
       error instanceof ReservationPaymentAmountInvalidError ||
       error instanceof ReservationPaymentMethodInvalidError ||
+      error instanceof ReservationPaymentMethodRequiredError ||
       error instanceof EmptyReservationItemsError ||
       error instanceof DuplicateReservationItemError ||
       error instanceof ReservationProductNotFoundError
@@ -186,7 +226,12 @@ export class ReservationController {
       error instanceof AbonoExcedeSaldoError ||
       error instanceof ReservationNotVigenteError ||
       error instanceof ReservationAlreadyCancelledError ||
-      error instanceof ReservationCannotBeCancelledError
+      error instanceof ReservationCannotBeCancelledError ||
+      error instanceof ReservationConvertedCannotBeCancelledError ||
+      error instanceof ReservationCannotBeConvertedError ||
+      error instanceof ReservationAlreadyConvertedError ||
+      error instanceof ReservationConversionStockInsufficientError ||
+      error instanceof ReservationPaymentBalanceInvalidError
     ) {
       status = 409;
       message = error.message;
@@ -195,6 +240,21 @@ export class ReservationController {
       }
       if (error instanceof ReservationCannotBeCancelledError) {
         errorCode = 'RESERVATION_CANNOT_BE_CANCELLED';
+      }
+      if (error instanceof ReservationConvertedCannotBeCancelledError) {
+        errorCode = 'RESERVATION_CONVERTED_CANNOT_BE_CANCELLED';
+      }
+      if (error instanceof ReservationCannotBeConvertedError) {
+        errorCode = 'RESERVATION_CANCELLED_CANNOT_BE_CONVERTED';
+      }
+      if (error instanceof ReservationAlreadyConvertedError) {
+        errorCode = 'RESERVATION_ALREADY_CONVERTED';
+      }
+      if (error instanceof ReservationConversionStockInsufficientError) {
+        errorCode = 'RESERVATION_CONVERSION_STOCK_INSUFFICIENT';
+      }
+      if (error instanceof ReservationPaymentBalanceInvalidError) {
+        errorCode = 'RESERVATION_PAYMENT_BALANCE_INVALID';
       }
     } else if (
       error instanceof ReservationCancellationConfirmationRequiredError

@@ -613,13 +613,17 @@ export type Reservation = {
 		phone: string;
 	};
 	dueDate: string;
-	status: "VIGENTE" | "CANCELADA";
+	status: "VIGENTE" | "CANCELADA" | "CONVERTIDA";
 	type: "RESERVA" | "PREVENTA";
 	totalAmount: string;
 	totalPaid: string;
 	pendingBalance: string;
 	cancellationReason: string | null;
 	cancelledAt: string | null;
+	sale?: {
+		id: string;
+		status: SaleStatus;
+	};
 	items: ReservationItem[];
 	createdAt: string;
 	updatedAt: string;
@@ -638,6 +642,29 @@ export type ReservationPayment = {
 	amount: string;
 	paymentMethod: ReservationPaymentMethod;
 	recordedAt: string;
+};
+
+export type SaleStatus =
+	| "PENDING_PAYMENT"
+	| "PENDING_DELIVERY"
+	| "DELIVERED"
+	| "CANCELLED";
+
+export type ReservationConversionResponse = {
+	reservation: {
+		id: string;
+		status: "CONVERTIDA";
+		totalAmount: string;
+		totalPaid: string;
+		pendingBalance: string;
+	};
+	sale: {
+		id: string;
+		reservationId: string | null;
+		status: SaleStatus;
+		totalAmount: string;
+	};
+	payment: ReservationPayment | null;
 };
 
 export type ReservationPaymentHistory = {
@@ -731,6 +758,28 @@ export async function createReservationPayment(
 		);
 	}
 	const body: ApiResponse<ReservationPaymentRegistration> = await res.json();
+	return body.data;
+}
+
+export async function convertReservationToSale(
+	id: string,
+	input: { paymentMethod?: ReservationPaymentMethod },
+): Promise<ReservationConversionResponse> {
+	const res = await fetch(`${API_URL}/reservation/${id}/convert-to-sale`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(input),
+	});
+	if (!res.ok) {
+		const body: ApiResponse<{ message?: string }> | null = await res
+			.json()
+			.catch(() => null);
+		throw new Error(
+			body?.data.message ??
+				`Error al liquidar y convertir la reserva (${res.status})`,
+		);
+	}
+	const body: ApiResponse<ReservationConversionResponse> = await res.json();
 	return body.data;
 }
 

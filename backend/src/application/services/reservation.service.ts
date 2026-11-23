@@ -12,6 +12,7 @@ import {
   MAX_NUMERIC_CENTS,
   parseMoneyCents,
   type ReservationPaymentHistory,
+  type ReservationPaymentMethod,
   type ReservationPaymentRegistration,
   validateReservationPaymentAmount,
 } from '../../domain/entities/reservationPayment.entity';
@@ -30,6 +31,7 @@ import type { IClientRepository } from '../port/client.repository';
 import type { IProductRepository } from '../port/product.repository';
 import type {
   CancelReservationData,
+  ConvertReservationData,
   CreateReservationData,
   CreateReservationItemData,
   IReservationRepository,
@@ -213,6 +215,22 @@ export class ReservationService {
       confirmWithPayments: input.confirmWithPayments === true,
     };
     return await this.reservationRepository.cancel(data);
+  }
+
+  async convertToSale(input: { id: string; paymentMethod: unknown }) {
+    let paymentMethod: ReservationPaymentMethod | null = null;
+    if (input.paymentMethod !== undefined && input.paymentMethod !== null) {
+      if (!isReservationPaymentMethod(input.paymentMethod)) {
+        throw new ReservationPaymentMethodInvalidError();
+      }
+      paymentMethod = input.paymentMethod;
+    }
+
+    const data: ConvertReservationData = {
+      id: input.id,
+      paymentMethod,
+    };
+    return await this.reservationRepository.convertToSale(data);
   }
 
   private validateDueDate(value: unknown): string {

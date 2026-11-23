@@ -16,6 +16,7 @@ import { auditColumns } from './utils';
 export const reservationStatusEnum = pgEnum('reservationStatus', [
   'VIGENTE',
   'CANCELADA',
+  'CONVERTIDA',
 ]);
 
 export const reservationTable = pgTable(

@@ -20,6 +20,10 @@ export interface CreateReservationPaymentBody {
   paymentMethod?: unknown;
 }
 
+export interface ConvertReservationBody {
+  paymentMethod?: unknown;
+}
+
 export interface CancelReservationBody {
   motivo?: unknown;
   confirmarConAbonos?: unknown;

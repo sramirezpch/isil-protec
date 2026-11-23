@@ -1,13 +1,18 @@
 import {
   ReservationAlreadyCancelledError,
+  ReservationAlreadyConvertedError,
   ReservationCancellationConfirmationRequiredError,
   ReservationCancellationReasonInvalidError,
   ReservationCannotBeCancelledError,
+  ReservationCannotBeConvertedError,
+  ReservationConversionStockInsufficientError,
+  ReservationConvertedCannotBeCancelledError,
 } from '../errors/reservation.errors';
 import type { ReservationItem } from './reservationItem.entity';
 import { formatMoneyCents, parseMoneyCents } from './reservationPayment.entity';
+import type { SaleStatus } from './sale.entity';
 
-export type ReservationStatus = 'VIGENTE' | 'CANCELADA';
+export type ReservationStatus = 'VIGENTE' | 'CANCELADA' | 'CONVERTIDA';
 export type ReservationType = 'RESERVA' | 'PREVENTA';
 
 export interface Reservation {
@@ -30,6 +35,10 @@ export interface ReservationWithItems extends Reservation {
     name: string | null;
     lastName: string | null;
     phone: string;
+  };
+  sale?: {
+    id: string;
+    status: SaleStatus;
   };
   items: ReservationItemWithProduct[];
 }
@@ -60,8 +69,36 @@ export function validateReservationCancellationState(
   if (status === 'CANCELADA') {
     throw new ReservationAlreadyCancelledError();
   }
+  if (status === 'CONVERTIDA') {
+    throw new ReservationConvertedCannotBeCancelledError();
+  }
   if (status !== 'VIGENTE') {
     throw new ReservationCannotBeCancelledError();
+  }
+}
+
+export function validateReservationConversionState(
+  status: ReservationStatus,
+): void {
+  if (status === 'CANCELADA') {
+    throw new ReservationCannotBeConvertedError();
+  }
+  if (status === 'CONVERTIDA') {
+    throw new ReservationAlreadyConvertedError();
+  }
+}
+
+export function validateReservationConversionStock(
+  figureName: string,
+  available: number,
+  requested: number,
+): void {
+  if (available < requested) {
+    throw new ReservationConversionStockInsufficientError(
+      figureName,
+      available,
+      requested,
+    );
   }
 }
 

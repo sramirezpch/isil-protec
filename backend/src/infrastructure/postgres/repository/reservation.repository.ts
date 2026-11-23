@@ -1,9 +1,11 @@
 import { and, asc, desc, eq, gt, inArray, sql } from 'drizzle-orm';
 import type {
   CancelReservationData,
+  ConvertReservationData,
   CreateReservationData,
   CreateReservationPaymentData,
   IReservationRepository,
+  ReservationConversionResult,
 } from '../../../application/port/reservation.repository';
 import type {
   Reservation,
@@ -15,14 +17,20 @@ import {
   normalizeCancellationReason,
   validateCancellationPaymentConfirmation,
   validateReservationCancellationState,
+  validateReservationConversionState,
+  validateReservationConversionStock,
 } from '../../../domain/entities/reservation.entity';
 import {
   formatMoneyCents,
+  parseMoneyCents,
+  prepareReservationConversionPayment,
   type ReservationPayment,
   type ReservationPaymentBalance,
   validateReservationPaymentAmount,
 } from '../../../domain/entities/reservationPayment.entity';
 import {
+  EmptyReservationItemsError,
+  ReservationAlreadyConvertedError,
   ReservationClientNotFoundError,
   ReservationNotFoundError,
   ReservationNotVigenteError,
@@ -35,11 +43,15 @@ import { productTable } from '../db/schema/product';
 import { reservationTable } from '../db/schema/reservation';
 import { reservationItemTable } from '../db/schema/reservationItem';
 import { reservationPaymentTable } from '../db/schema/reservationPayment';
+import { saleTable } from '../db/schema/sale';
+import { saleItemTable } from '../db/schema/saleItem';
 import {
   toReservationDomain,
   toReservationItemDomain,
   toReservationPaymentDomain,
 } from '../mappers/reservation.mapper';
+import { toSaleDomain, toSaleItemDomain } from '../mappers/sale.mapper';
+import { insertSaleTransaction } from './sale-transaction.repository';
 
 export class ReservationRepository implements IReservationRepository {
   private fetchItems(reservationIds: string[]) {
@@ -100,6 +112,10 @@ export class ReservationRepository implements IReservationRepository {
           lastName: clientTable.lastName,
           phone: clientTable.phone,
         },
+        sale: {
+          id: saleTable.id,
+          status: saleTable.status,
+        },
         totalPaid: sql<string>`COALESCE(SUM(${reservationPaymentTable.amount}), 0)::text`,
       })
       .from(reservationTable)
@@ -108,7 +124,8 @@ export class ReservationRepository implements IReservationRepository {
         reservationPaymentTable,
         eq(reservationPaymentTable.reservationId, reservationTable.id),
       )
-      .groupBy(reservationTable.id, clientTable.id)
+      .leftJoin(saleTable, eq(saleTable.reservationId, reservationTable.id))
+      .groupBy(reservationTable.id, clientTable.id, saleTable.id)
       .orderBy(desc(reservationTable.createdAt));
     if (!reservations.length) return [];
 
@@ -122,13 +139,17 @@ export class ReservationRepository implements IReservationRepository {
       itemsByReservation.set(item.reservationId, current);
     }
 
-    return reservations.map(({ reservation, client, totalPaid }) => ({
+    return reservations.map(({ reservation, client, totalPaid, sale }) => ({
       ...this.toReservationWithItems(
         reservation,
         client,
         itemsByReservation.get(reservation.id) ?? [],
       ),
       totalPaid,
+      sale:
+        sale?.id && sale.status
+          ? { id: sale.id, status: sale.status }
+          : undefined,
     }));
   }
 
@@ -421,6 +442,191 @@ export class ReservationRepository implements IReservationRepository {
       if (!updated) throw new ReservationNotFoundError();
 
       return toReservationDomain(updated);
+    });
+  }
+
+  async convertToSale(
+    data: ConvertReservationData,
+  ): Promise<ReservationConversionResult> {
+    return await db.transaction(async (tx) => {
+      const [reservation] = await tx
+        .select()
+        .from(reservationTable)
+        .where(eq(reservationTable.id, data.id))
+        .for('update')
+        .limit(1);
+      if (!reservation) throw new ReservationNotFoundError();
+
+      validateReservationConversionState(reservation.status);
+
+      const [paymentSum] = await tx
+        .select({
+          totalPaid: sql<string>`COALESCE(SUM(${reservationPaymentTable.amount}), 0)::text`,
+        })
+        .from(reservationPaymentTable)
+        .where(eq(reservationPaymentTable.reservationId, data.id));
+      const finalPayment = prepareReservationConversionPayment(
+        reservation.totalAmount,
+        paymentSum.totalPaid,
+        data.paymentMethod,
+      );
+
+      const items = await tx
+        .select()
+        .from(reservationItemTable)
+        .where(eq(reservationItemTable.reservationId, data.id));
+      if (!items.length) throw new EmptyReservationItemsError();
+
+      const quantityByProduct = new Map<string, number>();
+      for (const item of items) {
+        const quantityPending = item.quantity - item.cantidadBloqueada;
+        if (quantityPending > 0) {
+          quantityByProduct.set(
+            item.productId,
+            (quantityByProduct.get(item.productId) ?? 0) + quantityPending,
+          );
+        }
+      }
+
+      const productIds = [...quantityByProduct.keys()];
+      const products = productIds.length
+        ? await tx
+            .select({
+              id: productTable.id,
+              name: productTable.name,
+              stock: productTable.stock,
+            })
+            .from(productTable)
+            .where(inArray(productTable.id, productIds))
+            .orderBy(asc(productTable.id))
+            .for('update')
+        : [];
+      const productsById = new Map(
+        products.map((product) => [product.id, product]),
+      );
+
+      for (const productId of productIds) {
+        const product = productsById.get(productId);
+        if (!product) throw new ReservationProductNotFoundError(productId);
+
+        validateReservationConversionStock(
+          product.name,
+          product.stock,
+          quantityByProduct.get(productId) ?? 0,
+        );
+      }
+
+      const convertedAt = new Date();
+      for (const product of products) {
+        const quantity = quantityByProduct.get(product.id) ?? 0;
+        await tx
+          .update(productTable)
+          .set({
+            stock: sql`${productTable.stock} - ${quantity}`,
+            updatedAt: convertedAt,
+          })
+          .where(eq(productTable.id, product.id));
+      }
+
+      let payment: ReservationPayment | null = null;
+      if (finalPayment) {
+        const [createdPayment] = await tx
+          .insert(reservationPaymentTable)
+          .values({
+            reservationId: data.id,
+            amount: finalPayment.amount,
+            paymentMethod: finalPayment.paymentMethod,
+          })
+          .returning();
+        payment = toReservationPaymentDomain(createdPayment);
+      }
+
+      const [createdSale] = await tx
+        .insert(saleTable)
+        .values({
+          clientId: reservation.clientId,
+          reservationId: reservation.id,
+          totalAmount: reservation.totalAmount,
+          saleDate: convertedAt,
+          status: 'PENDING_DELIVERY',
+        })
+        .returning();
+
+      await tx.insert(saleItemTable).values(
+        items.map((item) => ({
+          saleId: createdSale.id,
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          discountType: item.discountType,
+          discountValue: item.discountValue,
+          subtotal: item.lineTotal,
+        })),
+      );
+
+      await insertSaleTransaction(tx, createdSale.id, reservation.totalAmount);
+
+      const [updatedReservation] = await tx
+        .update(reservationTable)
+        .set({ status: 'CONVERTIDA', updatedAt: convertedAt })
+        .where(
+          and(
+            eq(reservationTable.id, data.id),
+            eq(reservationTable.status, 'VIGENTE'),
+          ),
+        )
+        .returning();
+      if (!updatedReservation) throw new ReservationAlreadyConvertedError();
+
+      const saleItems = await tx
+        .select({
+          item: saleItemTable,
+          product: {
+            id: productTable.id,
+            sku: productTable.sku,
+            name: productTable.name,
+          },
+        })
+        .from(saleItemTable)
+        .leftJoin(productTable, eq(saleItemTable.productId, productTable.id))
+        .where(eq(saleItemTable.saleId, createdSale.id));
+      const [client] = await tx
+        .select({
+          id: clientTable.id,
+          name: clientTable.name,
+          lastName: clientTable.lastName,
+          phone: clientTable.phone,
+        })
+        .from(clientTable)
+        .where(eq(clientTable.id, reservation.clientId))
+        .limit(1);
+
+      const totalPaidCents =
+        parseMoneyCents(paymentSum.totalPaid, 'totalPaid') +
+        (payment ? parseMoneyCents(payment.amount, 'amount') : 0n);
+      const sale = {
+        ...toSaleDomain(createdSale),
+        client: client?.id ? client : undefined,
+        items: saleItems.map((row) => ({
+          ...toSaleItemDomain(row.item),
+          product: row.product?.id ? row.product : undefined,
+        })),
+      };
+
+      return {
+        reservation: {
+          id: updatedReservation.id,
+          status: 'CONVERTIDA',
+          totalAmount: updatedReservation.totalAmount,
+          totalPaid: formatMoneyCents(totalPaidCents),
+          pendingBalance: formatMoneyCents(
+            parseMoneyCents(updatedReservation.totalAmount, 'totalAmount') -
+              totalPaidCents,
+          ),
+        },
+        sale,
+        payment,
+      };
     });
   }
 }

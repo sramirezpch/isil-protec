@@ -102,6 +102,52 @@ export class ReservationCannotBeCancelledError extends Error {
   }
 }
 
+export class ReservationConvertedCannotBeCancelledError extends Error {
+  constructor() {
+    super(
+      'Una reserva convertida no puede cancelarse porque su venta ya existe',
+    );
+    this.name = 'ReservationConvertedCannotBeCancelledError';
+  }
+}
+
+export class ReservationCannotBeConvertedError extends Error {
+  constructor() {
+    super('Una reserva cancelada no puede reactivarse como venta');
+    this.name = 'ReservationCannotBeConvertedError';
+  }
+}
+
+export class ReservationAlreadyConvertedError extends Error {
+  constructor() {
+    super('La reserva ya fue convertida en venta');
+    this.name = 'ReservationAlreadyConvertedError';
+  }
+}
+
+export class ReservationConversionStockInsufficientError extends Error {
+  constructor(figureName: string, available: number, requested: number) {
+    super(
+      `Stock insuficiente para convertir ${figureName} (disponible: ${available}, solicitado: ${requested})`,
+    );
+    this.name = 'ReservationConversionStockInsufficientError';
+  }
+}
+
+export class ReservationPaymentMethodRequiredError extends Error {
+  constructor() {
+    super('Debe indicar un medio de pago para liquidar el saldo pendiente');
+    this.name = 'ReservationPaymentMethodRequiredError';
+  }
+}
+
+export class ReservationPaymentBalanceInvalidError extends Error {
+  constructor() {
+    super('Los abonos registrados superan el total de la reserva');
+    this.name = 'ReservationPaymentBalanceInvalidError';
+  }
+}
+
 export class ReservationCancellationReasonInvalidError extends Error {
   constructor() {
     super(
