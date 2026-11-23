@@ -1,14 +1,24 @@
 import { asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import type {
   CreateReservationData,
+  CreateReservationPaymentData,
   IReservationRepository,
 } from '../../../application/port/reservation.repository';
 import type {
   ReservationItemWithProduct,
   ReservationWithItems,
+  ReservationWithPaymentTotal,
 } from '../../../domain/entities/reservation.entity';
 import {
+  formatMoneyCents,
+  type ReservationPayment,
+  type ReservationPaymentBalance,
+  validateReservationPaymentAmount,
+} from '../../../domain/entities/reservationPayment.entity';
+import {
   ReservationClientNotFoundError,
+  ReservationNotFoundError,
+  ReservationNotVigenteError,
   ReservationPriceChangedError,
   ReservationProductNotFoundError,
 } from '../../../domain/errors/reservation.errors';
@@ -17,27 +27,14 @@ import { clientTable } from '../db/schema/client';
 import { productTable } from '../db/schema/product';
 import { reservationTable } from '../db/schema/reservation';
 import { reservationItemTable } from '../db/schema/reservationItem';
+import { reservationPaymentTable } from '../db/schema/reservationPayment';
 import {
   toReservationDomain,
   toReservationItemDomain,
+  toReservationPaymentDomain,
 } from '../mappers/reservation.mapper';
 
 export class ReservationRepository implements IReservationRepository {
-  private baseSelect() {
-    return db
-      .select({
-        reservation: reservationTable,
-        client: {
-          id: clientTable.id,
-          name: clientTable.name,
-          lastName: clientTable.lastName,
-          phone: clientTable.phone,
-        },
-      })
-      .from(reservationTable)
-      .leftJoin(clientTable, eq(reservationTable.clientId, clientTable.id));
-  }
-
   private fetchItems(reservationIds: string[]) {
     return db
       .select({
@@ -86,10 +83,26 @@ export class ReservationRepository implements IReservationRepository {
     };
   }
 
-  async findAll(): Promise<ReservationWithItems[]> {
-    const reservations = await this.baseSelect().orderBy(
-      desc(reservationTable.createdAt),
-    );
+  async findAll(): Promise<ReservationWithPaymentTotal[]> {
+    const reservations = await db
+      .select({
+        reservation: reservationTable,
+        client: {
+          id: clientTable.id,
+          name: clientTable.name,
+          lastName: clientTable.lastName,
+          phone: clientTable.phone,
+        },
+        totalPaid: sql<string>`COALESCE(SUM(${reservationPaymentTable.amount}), 0)::text`,
+      })
+      .from(reservationTable)
+      .leftJoin(clientTable, eq(reservationTable.clientId, clientTable.id))
+      .leftJoin(
+        reservationPaymentTable,
+        eq(reservationPaymentTable.reservationId, reservationTable.id),
+      )
+      .groupBy(reservationTable.id, clientTable.id)
+      .orderBy(desc(reservationTable.createdAt));
     if (!reservations.length) return [];
 
     const items = await this.fetchItems(
@@ -102,13 +115,14 @@ export class ReservationRepository implements IReservationRepository {
       itemsByReservation.set(item.reservationId, current);
     }
 
-    return reservations.map(({ reservation, client }) =>
-      this.toReservationWithItems(
+    return reservations.map(({ reservation, client, totalPaid }) => ({
+      ...this.toReservationWithItems(
         reservation,
         client,
         itemsByReservation.get(reservation.id) ?? [],
       ),
-    );
+      totalPaid,
+    }));
   }
 
   async create(data: CreateReservationData): Promise<ReservationWithItems> {
@@ -211,6 +225,105 @@ export class ReservationRepository implements IReservationRepository {
         },
         createdItems,
       );
+    });
+  }
+
+  async getPaymentBalance(
+    id: string,
+  ): Promise<ReservationPaymentBalance | null> {
+    const [reservation] = await db
+      .select({
+        status: reservationTable.status,
+        totalAmount: reservationTable.totalAmount,
+      })
+      .from(reservationTable)
+      .where(eq(reservationTable.id, id))
+      .limit(1);
+    if (!reservation) return null;
+
+    const [sum] = await db
+      .select({
+        totalPaid: sql<string>`COALESCE(SUM(${reservationPaymentTable.amount}), 0)::text`,
+      })
+      .from(reservationPaymentTable)
+      .where(eq(reservationPaymentTable.reservationId, id));
+
+    return {
+      status: reservation.status,
+      totalAmount: reservation.totalAmount,
+      totalPaid: sum.totalPaid,
+    };
+  }
+
+  async findPayments(
+    id: string,
+  ): Promise<{ totalAmount: string; payments: ReservationPayment[] } | null> {
+    const [reservation] = await db
+      .select({ totalAmount: reservationTable.totalAmount })
+      .from(reservationTable)
+      .where(eq(reservationTable.id, id))
+      .limit(1);
+    if (!reservation) return null;
+
+    const payments = await db
+      .select()
+      .from(reservationPaymentTable)
+      .where(eq(reservationPaymentTable.reservationId, id))
+      .orderBy(desc(reservationPaymentTable.recordedAt));
+
+    return {
+      totalAmount: reservation.totalAmount,
+      payments: payments.map(toReservationPaymentDomain),
+    };
+  }
+
+  async createPayment(data: CreateReservationPaymentData): Promise<{
+    payment: ReservationPayment;
+    totalAmount: string;
+    totalPaidBefore: string;
+  }> {
+    return await db.transaction(async (tx) => {
+      const [reservation] = await tx
+        .select({
+          status: reservationTable.status,
+          totalAmount: reservationTable.totalAmount,
+        })
+        .from(reservationTable)
+        .where(eq(reservationTable.id, data.reservationId))
+        .for('update')
+        .limit(1);
+      if (!reservation) throw new ReservationNotFoundError();
+
+      const [sum] = await tx
+        .select({
+          totalPaid: sql<string>`COALESCE(SUM(${reservationPaymentTable.amount}), 0)::text`,
+        })
+        .from(reservationPaymentTable)
+        .where(eq(reservationPaymentTable.reservationId, data.reservationId));
+      if (reservation.status !== 'VIGENTE') {
+        throw new ReservationNotVigenteError();
+      }
+
+      const amountCents = validateReservationPaymentAmount(
+        data.amount,
+        reservation.totalAmount,
+        sum.totalPaid,
+      );
+
+      const [payment] = await tx
+        .insert(reservationPaymentTable)
+        .values({
+          reservationId: data.reservationId,
+          amount: formatMoneyCents(amountCents),
+          paymentMethod: data.paymentMethod,
+        })
+        .returning();
+
+      return {
+        payment: toReservationPaymentDomain(payment),
+        totalAmount: reservation.totalAmount,
+        totalPaidBefore: sum.totalPaid,
+      };
     });
   }
 }

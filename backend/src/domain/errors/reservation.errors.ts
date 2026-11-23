@@ -59,3 +59,31 @@ export class ReservationNotFoundError extends Error {
     this.name = 'ReservationNotFoundError';
   }
 }
+
+export class ReservationPaymentAmountInvalidError extends Error {
+  constructor() {
+    super('El monto del abono debe ser mayor a cero');
+    this.name = 'ReservationPaymentAmountInvalidError';
+  }
+}
+
+export class ReservationPaymentMethodInvalidError extends Error {
+  constructor() {
+    super('El medio de pago no es válido');
+    this.name = 'ReservationPaymentMethodInvalidError';
+  }
+}
+
+export class ReservationNotVigenteError extends Error {
+  constructor() {
+    super('Solo se pueden registrar abonos para reservas vigentes');
+    this.name = 'ReservationNotVigenteError';
+  }
+}
+
+export class AbonoExcedeSaldoError extends Error {
+  constructor() {
+    super('El monto ingresado excede el saldo pendiente');
+    this.name = 'AbonoExcedeSaldoError';
+  }
+}

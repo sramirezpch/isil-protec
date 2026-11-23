@@ -25,6 +25,15 @@ export interface ReservationWithItems extends Reservation {
   items: ReservationItemWithProduct[];
 }
 
+export interface ReservationWithPaymentTotal extends ReservationWithItems {
+  totalPaid: string;
+}
+
+export interface ReservationWithPaymentSummary
+  extends ReservationWithPaymentTotal {
+  pendingBalance: string;
+}
+
 export interface ReservationItemWithProduct extends ReservationItem {
   product?: {
     id: string;

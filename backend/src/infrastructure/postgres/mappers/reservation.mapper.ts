@@ -1,7 +1,9 @@
 import type { ReservationWithItems } from '../../../domain/entities/reservation.entity';
 import type { ReservationItem } from '../../../domain/entities/reservationItem.entity';
+import type { ReservationPayment } from '../../../domain/entities/reservationPayment.entity';
 import type { ReservationModel } from '../db/schema/reservation';
 import type { ReservationItemModel } from '../db/schema/reservationItem';
+import type { ReservationPaymentModel } from '../db/schema/reservationPayment';
 
 export const toReservationDomain = (
   row: ReservationModel,
@@ -31,4 +33,14 @@ export const toReservationItemDomain = (
   createdAt: row.createdAt,
   updatedAt: row.updatedAt,
   deletedAt: row.deletedAt,
+});
+
+export const toReservationPaymentDomain = (
+  row: ReservationPaymentModel,
+): ReservationPayment => ({
+  id: row.id,
+  reservationId: row.reservationId,
+  amount: row.amount,
+  paymentMethod: row.paymentMethod,
+  recordedAt: row.recordedAt,
 });

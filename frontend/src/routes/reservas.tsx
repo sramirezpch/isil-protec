@@ -1,11 +1,13 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import ReservationFormModal from "../components/ReservationFormModal";
+import ReservationPaymentModal from "../components/ReservationPaymentModal";
 import {
 	createReservation,
 	getClients,
 	getProducts,
 	getReservations,
+	type Reservation,
 	type ReservationData,
 } from "../lib/api";
 
@@ -46,6 +48,8 @@ function RouteComponent() {
 	const { reservations, clients, products } = Route.useLoaderData();
 	const router = useRouter();
 	const [creating, setCreating] = useState(false);
+	const [selectedReservation, setSelectedReservation] =
+		useState<Reservation | null>(null);
 	const [refreshError, setRefreshError] = useState<string | null>(null);
 
 	const handleCreate = async (data: ReservationData) => {
@@ -61,6 +65,10 @@ function RouteComponent() {
 					: "La reserva se registró, pero no se pudo actualizar el listado.",
 			);
 		}
+	};
+
+	const handlePaymentsUpdated = async () => {
+		await router.invalidate();
 	};
 
 	return (
@@ -99,7 +107,10 @@ function RouteComponent() {
 							<th className="px-4 py-3.5 font-semibold">Estado</th>
 							<th className="px-4 py-3.5 font-semibold">Tipo</th>
 							<th className="px-4 py-3.5 font-semibold">Total</th>
+							<th className="px-4 py-3.5 font-semibold">Abonado</th>
+							<th className="px-4 py-3.5 font-semibold">Saldo pendiente</th>
 							<th className="px-4 py-3.5 font-semibold">Figuras pendientes</th>
+							<th className="px-4 py-3.5 font-semibold">Abonos</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -129,6 +140,12 @@ function RouteComponent() {
 									<td className="px-4 py-3.5 font-semibold text-slate-900">
 										S/ {reservation.totalAmount}
 									</td>
+									<td className="px-4 py-3.5 text-slate-700">
+										S/ {reservation.totalPaid}
+									</td>
+									<td className="px-4 py-3.5 font-semibold text-slate-900">
+										S/ {reservation.pendingBalance}
+									</td>
 									<td className="px-4 py-3.5 text-sm text-slate-700">
 										{pendingItems.length > 0
 											? pendingItems
@@ -136,13 +153,25 @@ function RouteComponent() {
 													.join(", ")
 											: "—"}
 									</td>
+									<td className="px-4 py-3.5">
+										<button
+											type="button"
+											onClick={() => {
+												setRefreshError(null);
+												setSelectedReservation(reservation);
+											}}
+											className="cursor-pointer rounded-md border border-indigo-200 bg-white px-3 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
+										>
+											Ver abonos
+										</button>
+									</td>
 								</tr>
 							);
 						})}
 						{reservations.length === 0 && (
 							<tr>
 								<td
-									colSpan={6}
+									colSpan={9}
 									className="px-4 py-8 text-center text-slate-500"
 								>
 									Aún no hay reservas registradas.
@@ -159,6 +188,14 @@ function RouteComponent() {
 					products={products.filter((product) => product.active)}
 					onClose={() => setCreating(false)}
 					onConfirm={handleCreate}
+				/>
+			)}
+
+			{selectedReservation && (
+				<ReservationPaymentModal
+					reservation={selectedReservation}
+					onClose={() => setSelectedReservation(null)}
+					onUpdated={handlePaymentsUpdated}
 				/>
 			)}
 		</main>

@@ -1,16 +1,25 @@
 import type { Request, Response } from 'express';
 import type { ReservationService } from '../../../application/services/reservation.service';
 import {
+  AbonoExcedeSaldoError,
   DuplicateReservationItemError,
   EmptyReservationItemsError,
   ReservationClientNotFoundError,
   ReservationDeadlineInvalidError,
   ReservationInvalidFieldError,
+  ReservationNotFoundError,
+  ReservationNotVigenteError,
+  ReservationPaymentAmountInvalidError,
+  ReservationPaymentMethodInvalidError,
   ReservationPriceChangedError,
   ReservationProductNotFoundError,
 } from '../../../domain/errors/reservation.errors';
 import { type DtoResponse, toResponseDto } from '../../../utils';
-import type { CreateReservationBody } from './utils';
+import type {
+  CreateReservationBody,
+  CreateReservationPaymentBody,
+  ReservationIdParams,
+} from './utils';
 import { validateUuid } from './utils';
 
 export class ReservationController {
@@ -64,6 +73,53 @@ export class ReservationController {
     }
   };
 
+  findPayments = async (
+    req: Request<ReservationIdParams>,
+    res: Response,
+  ): Promise<Response> => {
+    try {
+      const id = validateUuid(req.params.id, 'id');
+      const summary = await this.reservationService.findPayments(id);
+      return res.status(200).json(toResponseDto(true, { ...summary }));
+    } catch (error) {
+      return this.handleError(
+        error,
+        'Ocurrió un error al obtener los abonos de la reserva',
+        res,
+      );
+    }
+  };
+
+  createPayment = async (
+    req: Request<
+      ReservationIdParams,
+      DtoResponse,
+      CreateReservationPaymentBody
+    >,
+    res: Response,
+  ): Promise<Response> => {
+    try {
+      const id = validateUuid(req.params.id, 'id');
+      const body = req.body;
+      if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        throw new ReservationInvalidFieldError('body');
+      }
+
+      const result = await this.reservationService.createPayment({
+        reservationId: id,
+        amount: body.amount,
+        paymentMethod: body.paymentMethod,
+      });
+      return res.status(201).json(toResponseDto(true, { ...result }));
+    } catch (error) {
+      return this.handleError(
+        error,
+        'Ocurrió un error al registrar el abono',
+        res,
+      );
+    }
+  };
+
   private handleError(
     error: unknown,
     defaultMessage: string,
@@ -72,10 +128,15 @@ export class ReservationController {
     let status = 500;
     let message = defaultMessage;
 
-    if (
+    if (error instanceof ReservationNotFoundError) {
+      status = 404;
+      message = error.message;
+    } else if (
       error instanceof ReservationClientNotFoundError ||
       error instanceof ReservationDeadlineInvalidError ||
       error instanceof ReservationInvalidFieldError ||
+      error instanceof ReservationPaymentAmountInvalidError ||
+      error instanceof ReservationPaymentMethodInvalidError ||
       error instanceof EmptyReservationItemsError ||
       error instanceof DuplicateReservationItemError ||
       error instanceof ReservationProductNotFoundError
@@ -83,6 +144,12 @@ export class ReservationController {
       status = 400;
       message = error.message;
     } else if (error instanceof ReservationPriceChangedError) {
+      status = 409;
+      message = error.message;
+    } else if (
+      error instanceof AbonoExcedeSaldoError ||
+      error instanceof ReservationNotVigenteError
+    ) {
       status = 409;
       message = error.message;
     } else {

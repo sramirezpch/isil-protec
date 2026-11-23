@@ -616,9 +616,40 @@ export type Reservation = {
 	status: "VIGENTE";
 	type: "RESERVA" | "PREVENTA";
 	totalAmount: string;
+	totalPaid: string;
+	pendingBalance: string;
 	items: ReservationItem[];
 	createdAt: string;
 	updatedAt: string;
+};
+
+export type ReservationPaymentMethod =
+	| "YAPE"
+	| "PLIN"
+	| "EFECTIVO"
+	| "TRANSFERENCIA"
+	| "TARJETA";
+
+export type ReservationPayment = {
+	id: string;
+	reservationId: string;
+	amount: string;
+	paymentMethod: ReservationPaymentMethod;
+	recordedAt: string;
+};
+
+export type ReservationPaymentHistory = {
+	totalAmount: string;
+	totalPaid: string;
+	pendingBalance: string;
+	payments: ReservationPayment[];
+};
+
+export type ReservationPaymentRegistration = {
+	totalAmount: string;
+	totalPaid: string;
+	pendingBalance: string;
+	payment: ReservationPayment;
 };
 
 export type ReservationItemData = {
@@ -655,4 +686,41 @@ export function createReservation(reservation: ReservationData): Promise<void> {
 		reservation,
 		"Error al registrar la reserva",
 	);
+}
+
+export async function getReservationPayments(
+	id: string,
+): Promise<ReservationPaymentHistory> {
+	const res = await fetch(`${API_URL}/reservation/${id}/payments`);
+	if (!res.ok) {
+		const body: ApiResponse<{ message?: string }> | null = await res
+			.json()
+			.catch(() => null);
+		throw new Error(
+			body?.data.message ?? `Error al obtener abonos (${res.status})`,
+		);
+	}
+	const body: ApiResponse<ReservationPaymentHistory> = await res.json();
+	return body.data;
+}
+
+export async function createReservationPayment(
+	id: string,
+	input: { amount: string; paymentMethod: ReservationPaymentMethod },
+): Promise<ReservationPaymentRegistration> {
+	const res = await fetch(`${API_URL}/reservation/${id}/payments`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(input),
+	});
+	if (!res.ok) {
+		const body: ApiResponse<{ message?: string }> | null = await res
+			.json()
+			.catch(() => null);
+		throw new Error(
+			body?.data.message ?? `Error al registrar el abono (${res.status})`,
+		);
+	}
+	const body: ApiResponse<ReservationPaymentRegistration> = await res.json();
+	return body.data;
 }
