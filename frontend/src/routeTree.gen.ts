@@ -19,6 +19,7 @@ import { Route as FranquiciaRouteImport } from './routes/franquicia'
 import { Route as LineaRouteImport } from './routes/linea'
 import { Route as ProveedorRouteImport } from './routes/proveedor'
 import { Route as ReservasRouteImport } from './routes/reservas'
+import { Route as VentasRouteImport } from './routes/ventas'
 import { Route as MarcaIndexRouteImport } from './routes/marca/index'
 
 const IndexRoute = IndexRouteImport.update({
@@ -71,6 +72,11 @@ const ReservasRoute = ReservasRouteImport.update({
   path: '/reservas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VentasRoute = VentasRouteImport.update({
+  id: '/ventas',
+  path: '/ventas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MarcaIndexRoute = MarcaIndexRouteImport.update({
   id: '/marca/',
   path: '/marca/',
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/linea': typeof LineaRoute
   '/proveedor': typeof ProveedorRoute
   '/reservas': typeof ReservasRoute
+  '/ventas': typeof VentasRoute
   '/marca/': typeof MarcaIndexRoute
 }
 export interface FileRoutesByTo {
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/linea': typeof LineaRoute
   '/proveedor': typeof ProveedorRoute
   '/reservas': typeof ReservasRoute
+  '/ventas': typeof VentasRoute
   '/marca': typeof MarcaIndexRoute
 }
 export interface FileRoutesById {
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/linea': typeof LineaRoute
   '/proveedor': typeof ProveedorRoute
   '/reservas': typeof ReservasRoute
+  '/ventas': typeof VentasRoute
   '/marca/': typeof MarcaIndexRoute
 }
 export interface FileRouteTypes {
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/linea'
     | '/proveedor'
     | '/reservas'
+    | '/ventas'
     | '/marca/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/linea'
     | '/proveedor'
     | '/reservas'
+    | '/ventas'
     | '/marca'
   id:
     | '__root__'
@@ -156,6 +167,7 @@ export interface FileRouteTypes {
     | '/linea'
     | '/proveedor'
     | '/reservas'
+    | '/ventas'
     | '/marca/'
   fileRoutesById: FileRoutesById
 }
@@ -170,6 +182,7 @@ export interface RootRouteChildren {
   LineaRoute: typeof LineaRoute
   ProveedorRoute: typeof ProveedorRoute
   ReservasRoute: typeof ReservasRoute
+  VentasRoute: typeof VentasRoute
   MarcaIndexRoute: typeof MarcaIndexRoute
 }
 
@@ -245,6 +258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReservasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ventas': {
+      id: '/ventas'
+      path: '/ventas'
+      fullPath: '/ventas'
+      preLoaderRoute: typeof VentasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/marca/': {
       id: '/marca/'
       path: '/marca'
@@ -266,6 +286,7 @@ const rootRouteChildren: RootRouteChildren = {
   LineaRoute: LineaRoute,
   ProveedorRoute: ProveedorRoute,
   ReservasRoute: ReservasRoute,
+  VentasRoute: VentasRoute,
   MarcaIndexRoute: MarcaIndexRoute,
 }
 export const routeTree = rootRouteImport
