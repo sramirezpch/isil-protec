@@ -50,10 +50,29 @@ const clientName = (client?: {
 		? [client.name, client.lastName].filter(Boolean).join(" ") || client.phone
 		: "Cliente no disponible";
 
+type ReservationStatusFilter = "" | Reservation["status"];
+type ReservationTypeFilter = "" | Reservation["type"];
+
+const normalizeSearchText = (value: string): string =>
+	value
+		.normalize("NFD")
+		.replace(/[\u0300-\u036f]/g, "")
+		.trim()
+		.replace(/\s+/g, " ")
+		.toLocaleLowerCase();
+
+const filterFieldClass =
+	"w-full rounded-md border border-slate-200 bg-slate-100 px-3.5 py-2.5 text-sm text-slate-700 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100";
+
 function RouteComponent() {
 	const { reservations, clients, products } = Route.useLoaderData();
 	const router = useRouter();
 	const [creating, setCreating] = useState(false);
+	const [searchQuery, setSearchQuery] = useState("");
+	const [statusFilter, setStatusFilter] = useState<ReservationStatusFilter>("");
+	const [typeFilter, setTypeFilter] = useState<ReservationTypeFilter>("");
+	const [dateFrom, setDateFrom] = useState("");
+	const [dateTo, setDateTo] = useState("");
 	const [selectedReservation, setSelectedReservation] =
 		useState<Reservation | null>(null);
 	const [reservationToCancel, setReservationToCancel] =
@@ -61,6 +80,35 @@ function RouteComponent() {
 	const [reservationToConvert, setReservationToConvert] =
 		useState<Reservation | null>(null);
 	const [refreshError, setRefreshError] = useState<string | null>(null);
+
+	const hasInvalidDateRange = Boolean(dateFrom && dateTo && dateFrom > dateTo);
+	const normalizedQuery = normalizeSearchText(searchQuery);
+	const filteredReservations = reservations.filter((reservation) => {
+		const name = [reservation.client?.name, reservation.client?.lastName]
+			.filter(Boolean)
+			.join(" ");
+		const matchesName =
+			!normalizedQuery || normalizeSearchText(name).includes(normalizedQuery);
+		const matchesStatus = !statusFilter || reservation.status === statusFilter;
+		const matchesType = !typeFilter || reservation.type === typeFilter;
+		const matchesDate =
+			hasInvalidDateRange ||
+			((!dateFrom || reservation.dueDate >= dateFrom) &&
+				(!dateTo || reservation.dueDate <= dateTo));
+
+		return matchesName && matchesStatus && matchesType && matchesDate;
+	});
+	const hasActiveFilters = Boolean(
+		searchQuery || statusFilter || typeFilter || dateFrom || dateTo,
+	);
+
+	const clearFilters = () => {
+		setSearchQuery("");
+		setStatusFilter("");
+		setTypeFilter("");
+		setDateFrom("");
+		setDateTo("");
+	};
 
 	const handleCreate = async (data: ReservationData) => {
 		await createReservation(data);
@@ -151,6 +199,123 @@ function RouteComponent() {
 				</p>
 			)}
 
+			<section className="mb-5 rounded-md border border-slate-200 bg-white p-4 shadow-sm">
+				<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(16rem,1.5fr)_repeat(2,minmax(10rem,1fr))]">
+					<div>
+						<label
+							htmlFor="reservation-search"
+							className="mb-1.5 block text-sm font-medium text-slate-700"
+						>
+							Buscar por cliente
+						</label>
+						<input
+							id="reservation-search"
+							type="search"
+							value={searchQuery}
+							onChange={(event) => setSearchQuery(event.target.value)}
+							placeholder="Nombre del cliente..."
+							className={filterFieldClass}
+						/>
+					</div>
+					<div>
+						<label
+							htmlFor="reservation-status-filter"
+							className="mb-1.5 block text-sm font-medium text-slate-700"
+						>
+							Estado
+						</label>
+						<select
+							id="reservation-status-filter"
+							value={statusFilter}
+							onChange={(event) =>
+								setStatusFilter(event.target.value as ReservationStatusFilter)
+							}
+							className={filterFieldClass}
+						>
+							<option value="">Todos</option>
+							<option value="VIGENTE">Vigente</option>
+							<option value="CANCELADA">Cancelada</option>
+							<option value="CONVERTIDA">Convertida</option>
+						</select>
+					</div>
+					<div>
+						<label
+							htmlFor="reservation-type-filter"
+							className="mb-1.5 block text-sm font-medium text-slate-700"
+						>
+							Tipo
+						</label>
+						<select
+							id="reservation-type-filter"
+							value={typeFilter}
+							onChange={(event) =>
+								setTypeFilter(event.target.value as ReservationTypeFilter)
+							}
+							className={filterFieldClass}
+						>
+							<option value="">Todos</option>
+							<option value="RESERVA">Reserva</option>
+							<option value="PREVENTA">Preventa</option>
+						</select>
+					</div>
+				</div>
+
+				<div className="mt-3 grid gap-3 sm:grid-cols-2">
+					<div>
+						<label
+							htmlFor="reservation-date-from"
+							className="mb-1.5 block text-sm font-medium text-slate-700"
+						>
+							Fecha límite desde
+						</label>
+						<input
+							id="reservation-date-from"
+							type="date"
+							value={dateFrom}
+							onChange={(event) => setDateFrom(event.target.value)}
+							className={filterFieldClass}
+						/>
+					</div>
+					<div>
+						<label
+							htmlFor="reservation-date-to"
+							className="mb-1.5 block text-sm font-medium text-slate-700"
+						>
+							Fecha límite hasta
+						</label>
+						<input
+							id="reservation-date-to"
+							type="date"
+							value={dateTo}
+							onChange={(event) => setDateTo(event.target.value)}
+							className={filterFieldClass}
+						/>
+					</div>
+				</div>
+
+				{hasInvalidDateRange && (
+					<p className="mb-0 mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+						La fecha «Desde» debe ser anterior o igual a «Hasta». No se aplicará
+						el filtro de fecha.
+					</p>
+				)}
+
+				<div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-3">
+					<p className="m-0 text-sm text-slate-600" aria-live="polite">
+						Mostrando {filteredReservations.length} de {reservations.length}{" "}
+						reservas
+					</p>
+					<button
+						type="button"
+						onClick={clearFilters}
+						disabled={!hasActiveFilters}
+						className="cursor-pointer rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+					>
+						Limpiar filtros
+					</button>
+				</div>
+			</section>
+
 			<div className="overflow-x-auto rounded-md border border-slate-200 bg-white shadow-sm">
 				<table className="w-full border-collapse text-left">
 					<thead>
@@ -168,7 +333,7 @@ function RouteComponent() {
 						</tr>
 					</thead>
 					<tbody>
-						{reservations.map((reservation) => {
+						{filteredReservations.map((reservation) => {
 							const firstItem = reservation.items[0];
 							return (
 								<tr
@@ -251,17 +416,17 @@ function RouteComponent() {
 											"—"
 										)}
 									</td>
-									<td className="px-4 py-3.5">
-										<div className="flex flex-col items-start gap-2">
+									<td className="w-56 px-4 py-3.5">
+										<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
 											<button
 												type="button"
 												onClick={() => {
 													setRefreshError(null);
 													setSelectedReservation(reservation);
 												}}
-												className="cursor-pointer rounded-md border border-indigo-200 bg-white px-3 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
+												className="cursor-pointer border-0 bg-transparent p-0 py-1 text-xs font-semibold text-indigo-700 hover:text-indigo-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
 											>
-												Ver detalle
+												Detalle y abonos
 											</button>
 											{reservation.status === "VIGENTE" && (
 												<>
@@ -271,7 +436,7 @@ function RouteComponent() {
 															setRefreshError(null);
 															setReservationToConvert(reservation);
 														}}
-														className="cursor-pointer rounded-md border border-indigo-200 bg-white px-3 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
+														className="cursor-pointer border-0 bg-transparent p-0 py-1 text-xs font-semibold text-indigo-700 hover:text-indigo-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
 													>
 														Liquidar y convertir
 													</button>
@@ -281,9 +446,9 @@ function RouteComponent() {
 															setRefreshError(null);
 															setReservationToCancel(reservation);
 														}}
-														className="cursor-pointer rounded-md border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
+														className="cursor-pointer border-0 bg-transparent p-0 py-1 text-xs font-semibold text-red-700 hover:text-red-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
 													>
-														Cancelar reserva
+														Cancelar
 													</button>
 												</>
 											)}
@@ -299,6 +464,16 @@ function RouteComponent() {
 									className="px-4 py-8 text-center text-slate-500"
 								>
 									Aún no hay reservas registradas.
+								</td>
+							</tr>
+						)}
+						{reservations.length > 0 && filteredReservations.length === 0 && (
+							<tr>
+								<td
+									colSpan={10}
+									className="px-4 py-8 text-center text-slate-500"
+								>
+									No hay reservas que coincidan con los filtros.
 								</td>
 							</tr>
 						)}

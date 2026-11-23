@@ -80,6 +80,14 @@ const calculateLineTotal = (
 const fullName = (client: Client): string =>
 	[client.name, client.lastName].filter(Boolean).join(" ") || client.phone;
 
+const labelClass = "mb-2 block text-sm font-semibold text-slate-900";
+
+const fieldClass =
+	"w-full rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100";
+
+const selectClass =
+	"w-full rounded-md border border-slate-200 bg-slate-100 px-3.5 py-2.5 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100";
+
 export default function ReservationFormModal({
 	clients,
 	products,
@@ -172,9 +180,18 @@ export default function ReservationFormModal({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-			<div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+			<form
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="reservation-form-title"
+				onSubmit={handleSubmit}
+				className="max-h-[calc(100vh-2rem)] w-full max-w-5xl overflow-y-auto rounded-lg border border-slate-200 bg-white p-6 shadow-xl"
+			>
 				<div className="mb-5 flex items-center justify-between gap-4">
-					<h2 className="m-0 text-xl font-bold text-slate-900">
+					<h2
+						id="reservation-form-title"
+						className="m-0 text-lg font-bold text-slate-900"
+					>
 						Nueva reserva o preventa
 					</h2>
 					<button
@@ -187,44 +204,70 @@ export default function ReservationFormModal({
 					</button>
 				</div>
 
-				{error && (
-					<p className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-						{error}
-					</p>
-				)}
-
-				<form onSubmit={handleSubmit} className="space-y-5">
-					<div className="grid gap-4 sm:grid-cols-2">
-						<label className="block text-sm font-medium text-slate-700">
-							Cliente
+				<section className="mb-6 rounded-lg border border-slate-200 p-5">
+					<h3 className="m-0 mb-4 text-base font-bold text-slate-900">
+						Datos de la Reserva
+					</h3>
+					<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+						<div>
+							<label htmlFor="reservation-client" className={labelClass}>
+								Cliente
+							</label>
 							<select
+								id="reservation-client"
 								required
 								value={clientId}
 								onChange={(event) => setClientId(event.target.value)}
-								className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+								className={`${selectClass} ${clientId ? "text-slate-700" : "text-slate-500"}`}
 							>
-								<option value="">Seleccione un cliente</option>
+								<option value="">Seleccione un cliente...</option>
 								{clients.map((client) => (
 									<option key={client.id} value={client.id}>
 										{fullName(client)}
 									</option>
 								))}
 							</select>
-						</label>
-						<label className="block text-sm font-medium text-slate-700">
-							Fecha límite de pago
+						</div>
+						<div>
+							<label htmlFor="reservation-due-date" className={labelClass}>
+								Fecha límite de pago
+							</label>
 							<input
+								id="reservation-due-date"
 								required
 								type="date"
 								min={currentDateInPeru()}
 								value={dueDate}
 								onChange={(event) => setDueDate(event.target.value)}
-								className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+								className={fieldClass}
 							/>
-						</label>
+						</div>
+					</div>
+				</section>
+
+				<section className="mb-6 rounded-lg border border-slate-200 p-5">
+					<div className="mb-4 flex items-center justify-between gap-4">
+						<h3 className="m-0 text-base font-bold text-slate-900">Figuras</h3>
+						<button
+							type="button"
+							onClick={() => setItems((current) => [...current, emptyLine()])}
+							className="cursor-pointer rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+						>
+							+ Agregar Figura
+						</button>
 					</div>
 
-					<div className="space-y-4">
+					<div className="mb-2 hidden grid-cols-[minmax(14rem,1fr)_5rem_8rem_7rem_10rem_7rem_2rem] gap-3 text-xs font-semibold uppercase tracking-wide text-slate-500 lg:grid">
+						<span>Figura</span>
+						<span>Cantidad</span>
+						<span>Descuento</span>
+						<span>Valor</span>
+						<span>Disponibilidad</span>
+						<span className="text-right">Total línea</span>
+						<span />
+					</div>
+
+					<div className="flex flex-col gap-3">
 						{items.map((item, index) => {
 							const product = products.find(
 								(candidate) => candidate.id === item.productId,
@@ -235,173 +278,187 @@ export default function ReservationFormModal({
 								product !== undefined &&
 								quantity > 0n &&
 								BigInt(product.stock) >= quantity;
+							const lineTotal = calculateLineTotal(item, product);
 
 							return (
 								<div
 									key={item.id}
-									className="rounded-md border border-slate-200 p-4"
+									className="grid grid-cols-2 items-center gap-3 border-b border-slate-200 pb-3 last:border-b-0 last:pb-0 lg:grid-cols-[minmax(14rem,1fr)_5rem_8rem_7rem_10rem_7rem_2rem] lg:border-b-0 lg:pb-0"
 								>
-									<div className="mb-3 flex items-center justify-between">
-										<h3 className="m-0 text-sm font-semibold text-slate-800">
-											Figura {index + 1}
-										</h3>
-										{items.length > 1 && (
-											<button
-												type="button"
-												onClick={() =>
-													setItems((current) =>
-														current.filter(
-															(_, itemIndex) => itemIndex !== index,
-														),
-													)
-												}
-												className="cursor-pointer border-0 bg-transparent text-sm text-red-600"
+									<select
+										aria-label={`Figura ${index + 1}`}
+										required
+										value={item.productId}
+										onChange={(event) =>
+											updateItem(index, { productId: event.target.value })
+										}
+										className={`col-span-2 ${selectClass} ${item.productId ? "text-slate-700" : "text-slate-500"} lg:col-span-1`}
+									>
+										<option value="">Seleccione una figura activa...</option>
+										{products.map((candidate) => (
+											<option
+												key={candidate.id}
+												value={candidate.id}
+												disabled={items.some(
+													(other, otherIndex) =>
+														otherIndex !== index &&
+														other.productId === candidate.id,
+												)}
 											>
-												Quitar
-											</button>
-										)}
-									</div>
-
-									<div className="grid gap-3 md:grid-cols-2">
-										<label className="block text-sm font-medium text-slate-700 md:col-span-2">
-											Figura
-											<select
-												required
-												value={item.productId}
-												onChange={(event) =>
-													updateItem(index, { productId: event.target.value })
-												}
-												className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-											>
-												<option value="">Seleccione una figura activa</option>
-												{products.map((candidate) => (
-													<option
-														key={candidate.id}
-														value={candidate.id}
-														disabled={items.some(
-															(other, otherIndex) =>
-																otherIndex !== index &&
-																other.productId === candidate.id,
-														)}
-													>
-														{candidate.sku} — {candidate.name} (stock:{" "}
-														{candidate.stock}) — S/ {candidate.price}
-													</option>
-												))}
-											</select>
-										</label>
-										<label className="block text-sm font-medium text-slate-700">
+												{candidate.sku} · {candidate.name} (stock:{" "}
+												{candidate.stock}) — S/ {candidate.price}
+											</option>
+										))}
+									</select>
+									<div>
+										<span className="mb-1 block text-xs text-slate-500 lg:hidden">
 											Cantidad
+										</span>
+										<input
+											aria-label={`Cantidad de la figura ${index + 1}`}
+											required
+											type="number"
+											min="1"
+											step="1"
+											value={item.quantity}
+											onChange={(event) =>
+												updateItem(index, { quantity: event.target.value })
+											}
+											placeholder="0"
+											className={fieldClass}
+										/>
+									</div>
+									<div>
+										<span className="mb-1 block text-xs text-slate-500 lg:hidden">
+											Descuento
+										</span>
+										<select
+											aria-label={`Tipo de descuento de la figura ${index + 1}`}
+											value={item.discountType}
+											onChange={(event) => {
+												const value = event.target.value;
+												if (
+													value === "" ||
+													value === "PORCENTAJE" ||
+													value === "MONTO"
+												) {
+													updateItem(index, {
+														discountType: value,
+														discountValue: "",
+													});
+												}
+											}}
+											className={`${selectClass} text-slate-700`}
+										>
+											<option value="">Sin descuento</option>
+											<option value="PORCENTAJE">Porcentaje</option>
+											<option value="MONTO">Monto fijo</option>
+										</select>
+									</div>
+									<div>
+										<span
+											className={`mb-1 block text-xs text-slate-500 lg:hidden ${
+												item.discountType ? "" : "hidden"
+											}`}
+										>
+											Valor
+										</span>
+										{item.discountType ? (
 											<input
+												aria-label={`Valor del descuento de la figura ${index + 1}`}
 												required
 												type="number"
-												min="1"
-												step="1"
-												value={item.quantity}
-												onChange={(event) =>
-													updateItem(index, { quantity: event.target.value })
+												min="0"
+												max={
+													item.discountType === "PORCENTAJE" ? "100" : undefined
 												}
-												className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+												step="0.01"
+												value={item.discountValue}
+												onChange={(event) =>
+													updateItem(index, {
+														discountValue: event.target.value,
+													})
+												}
+												placeholder={
+													item.discountType === "PORCENTAJE" ? "0–100" : "0.00"
+												}
+												className={fieldClass}
 											/>
-										</label>
-										<label className="block text-sm font-medium text-slate-700">
-											Tipo de descuento
-											<select
-												value={item.discountType}
-												onChange={(event) => {
-													const value = event.target.value;
-													if (
-														value === "" ||
-														value === "PORCENTAJE" ||
-														value === "MONTO"
-													) {
-														updateItem(index, {
-															discountType: value,
-															discountValue: "",
-														});
-													}
-												}}
-												className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-											>
-												<option value="">Sin descuento</option>
-												<option value="PORCENTAJE">Porcentaje</option>
-												<option value="MONTO">Monto fijo (PEN)</option>
-											</select>
-										</label>
-										{item.discountType && (
-											<label className="block text-sm font-medium text-slate-700">
-												Valor del descuento{" "}
-												{item.discountType === "PORCENTAJE" ? "(%)" : "(PEN)"}
-												<input
-													required
-													type="number"
-													min="0"
-													max={
-														item.discountType === "PORCENTAJE"
-															? "100"
-															: undefined
-													}
-													step="0.01"
-													value={item.discountValue}
-													onChange={(event) =>
-														updateItem(index, {
-															discountValue: event.target.value,
-														})
-													}
-													className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-												/>
-											</label>
+										) : (
+											<span className="hidden text-center text-slate-400 lg:block">
+												—
+											</span>
 										)}
 									</div>
-
-									{product && (
-										<p
-											className={`mb-0 mt-3 text-sm ${
+									{product ? (
+										<span
+											className={`col-span-2 text-xs ${
 												canBlock ? "text-emerald-700" : "text-amber-700"
-											}`}
+											} lg:col-span-1`}
 										>
 											{canBlock
 												? "Se bloqueará stock"
 												: "Sin stock suficiente: quedará como preventa"}
-										</p>
+										</span>
+									) : (
+										<span className="hidden text-center text-slate-400 lg:block">
+											—
+										</span>
 									)}
+									<span className="text-right text-sm font-semibold text-slate-900">
+										<span className="lg:hidden">Total: </span>
+										{lineTotal === null ? "—" : formatCents(lineTotal)}
+									</span>
+									<button
+										type="button"
+										aria-label={`Quitar la figura ${index + 1}`}
+										onClick={() =>
+											setItems((current) =>
+												current.filter((line) => line.id !== item.id),
+											)
+										}
+										disabled={items.length === 1}
+										className="cursor-pointer justify-self-end border-0 bg-transparent p-0 text-red-500 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-30"
+									>
+										🗑️
+									</button>
 								</div>
 							);
 						})}
 					</div>
 
+					<dl className="m-0 mt-5 grid grid-cols-2 gap-x-4 border-t border-slate-200 pt-4 text-sm">
+						<dt className="font-bold text-slate-900">Total referencial</dt>
+						<dd className="m-0 text-right text-lg font-bold text-slate-900">
+							{totalCents === null ? "—" : formatCents(totalCents)}
+						</dd>
+					</dl>
+				</section>
+
+				{error && (
+					<p className="m-0 mb-5 rounded-md border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700">
+						{error}
+					</p>
+				)}
+
+				<div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
 					<button
 						type="button"
-						onClick={() => setItems((current) => [...current, emptyLine()])}
-						className="cursor-pointer rounded-md border border-indigo-300 bg-white px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50"
+						onClick={onClose}
+						disabled={isSubmitting}
+						className="cursor-pointer rounded-md border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
 					>
-						+ Agregar figura
+						Cancelar
 					</button>
-
-					<p className="m-0 text-right text-lg font-bold text-slate-900">
-						Total referencial:{" "}
-						{totalCents === null ? "—" : formatCents(totalCents)}
-					</p>
-
-					<div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
-						<button
-							type="button"
-							onClick={onClose}
-							disabled={isSubmitting}
-							className="cursor-pointer rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700"
-						>
-							Cancelar
-						</button>
-						<button
-							type="submit"
-							disabled={isSubmitting}
-							className="cursor-pointer rounded-md border-0 bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
-						>
-							{isSubmitting ? "Guardando..." : "Registrar reserva"}
-						</button>
-					</div>
-				</form>
-			</div>
+					<button
+						type="submit"
+						disabled={isSubmitting}
+						className="cursor-pointer rounded-md border-0 bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
+					>
+						{isSubmitting ? "Guardando..." : "Registrar reserva"}
+					</button>
+				</div>
+			</form>
 		</div>
 	);
 }
