@@ -1,8 +1,10 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
+import ReservationCancellationModal from "../components/ReservationCancellationModal";
 import ReservationFormModal from "../components/ReservationFormModal";
 import ReservationPaymentModal from "../components/ReservationPaymentModal";
 import {
+	cancelReservation,
 	createReservation,
 	getClients,
 	getProducts,
@@ -50,6 +52,8 @@ function RouteComponent() {
 	const [creating, setCreating] = useState(false);
 	const [selectedReservation, setSelectedReservation] =
 		useState<Reservation | null>(null);
+	const [reservationToCancel, setReservationToCancel] =
+		useState<Reservation | null>(null);
 	const [refreshError, setRefreshError] = useState<string | null>(null);
 
 	const handleCreate = async (data: ReservationData) => {
@@ -69,6 +73,25 @@ function RouteComponent() {
 
 	const handlePaymentsUpdated = async () => {
 		await router.invalidate();
+	};
+
+	const handleCancel = async (
+		reservation: Reservation,
+		motivo: string,
+		confirmarConAbonos: boolean,
+	) => {
+		await cancelReservation(reservation.id, { motivo, confirmarConAbonos });
+		setReservationToCancel(null);
+		try {
+			await router.invalidate();
+			setRefreshError(null);
+		} catch (error) {
+			setRefreshError(
+				error instanceof Error
+					? `La reserva se canceló, pero no se pudo actualizar reservas y stock: ${error.message}`
+					: "La reserva se canceló, pero no se pudo actualizar reservas y stock.",
+			);
+		}
 	};
 
 	return (
@@ -109,8 +132,9 @@ function RouteComponent() {
 							<th className="px-4 py-3.5 font-semibold">Total</th>
 							<th className="px-4 py-3.5 font-semibold">Abonado</th>
 							<th className="px-4 py-3.5 font-semibold">Saldo pendiente</th>
+							<th className="px-4 py-3.5 font-semibold">Cancelación</th>
 							<th className="px-4 py-3.5 font-semibold">Figuras pendientes</th>
-							<th className="px-4 py-3.5 font-semibold">Abonos</th>
+							<th className="px-4 py-3.5 font-semibold">Acciones</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -130,7 +154,13 @@ function RouteComponent() {
 										{reservation.dueDate}
 									</td>
 									<td className="px-4 py-3.5">
-										<span className="rounded bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">
+										<span
+											className={`rounded px-2 py-1 text-xs font-semibold ${
+												reservation.status === "VIGENTE"
+													? "bg-emerald-100 text-emerald-700"
+													: "bg-slate-200 text-slate-700"
+											}`}
+										>
 											{reservation.status}
 										</span>
 									</td>
@@ -147,6 +177,23 @@ function RouteComponent() {
 										S/ {reservation.pendingBalance}
 									</td>
 									<td className="px-4 py-3.5 text-sm text-slate-700">
+										{reservation.status === "CANCELADA" ? (
+											<>
+												<p className="m-0">{reservation.cancellationReason}</p>
+												{reservation.cancelledAt && (
+													<time className="text-xs text-slate-500">
+														{new Intl.DateTimeFormat("es-PE", {
+															dateStyle: "short",
+															timeStyle: "short",
+														}).format(new Date(reservation.cancelledAt))}
+													</time>
+												)}
+											</>
+										) : (
+											"—"
+										)}
+									</td>
+									<td className="px-4 py-3.5 text-sm text-slate-700">
 										{pendingItems.length > 0
 											? pendingItems
 													.map((item) => item.product?.name ?? item.productId)
@@ -154,16 +201,30 @@ function RouteComponent() {
 											: "—"}
 									</td>
 									<td className="px-4 py-3.5">
-										<button
-											type="button"
-											onClick={() => {
-												setRefreshError(null);
-												setSelectedReservation(reservation);
-											}}
-											className="cursor-pointer rounded-md border border-indigo-200 bg-white px-3 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
-										>
-											Ver abonos
-										</button>
+										<div className="flex flex-col items-start gap-2">
+											<button
+												type="button"
+												onClick={() => {
+													setRefreshError(null);
+													setSelectedReservation(reservation);
+												}}
+												className="cursor-pointer rounded-md border border-indigo-200 bg-white px-3 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
+											>
+												Ver abonos
+											</button>
+											{reservation.status === "VIGENTE" && (
+												<button
+													type="button"
+													onClick={() => {
+														setRefreshError(null);
+														setReservationToCancel(reservation);
+													}}
+													className="cursor-pointer rounded-md border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
+												>
+													Cancelar reserva
+												</button>
+											)}
+										</div>
 									</td>
 								</tr>
 							);
@@ -171,7 +232,7 @@ function RouteComponent() {
 						{reservations.length === 0 && (
 							<tr>
 								<td
-									colSpan={9}
+									colSpan={10}
 									className="px-4 py-8 text-center text-slate-500"
 								>
 									Aún no hay reservas registradas.
@@ -196,6 +257,16 @@ function RouteComponent() {
 					reservation={selectedReservation}
 					onClose={() => setSelectedReservation(null)}
 					onUpdated={handlePaymentsUpdated}
+				/>
+			)}
+
+			{reservationToCancel && (
+				<ReservationCancellationModal
+					reservation={reservationToCancel}
+					onClose={() => setReservationToCancel(null)}
+					onConfirm={(motivo, confirmarConAbonos) =>
+						handleCancel(reservationToCancel, motivo, confirmarConAbonos)
+					}
 				/>
 			)}
 		</main>

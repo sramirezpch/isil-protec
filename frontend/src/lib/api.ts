@@ -613,11 +613,13 @@ export type Reservation = {
 		phone: string;
 	};
 	dueDate: string;
-	status: "VIGENTE";
+	status: "VIGENTE" | "CANCELADA";
 	type: "RESERVA" | "PREVENTA";
 	totalAmount: string;
 	totalPaid: string;
 	pendingBalance: string;
+	cancellationReason: string | null;
+	cancelledAt: string | null;
 	items: ReservationItem[];
 	createdAt: string;
 	updatedAt: string;
@@ -651,6 +653,13 @@ export type ReservationPaymentRegistration = {
 	pendingBalance: string;
 	payment: ReservationPayment;
 };
+
+export class ReservationCancellationConfirmationRequiredError extends Error {
+	constructor(public readonly totalPaid: string) {
+		super("Confirme la cancelación con los abonos registrados.");
+		this.name = "ReservationCancellationConfirmationRequiredError";
+	}
+}
 
 export type ReservationItemData = {
 	productId: string;
@@ -723,4 +732,32 @@ export async function createReservationPayment(
 	}
 	const body: ApiResponse<ReservationPaymentRegistration> = await res.json();
 	return body.data;
+}
+
+export async function cancelReservation(
+	id: string,
+	input: { motivo: string; confirmarConAbonos: boolean },
+): Promise<Reservation> {
+	const res = await fetch(`${API_URL}/reservation/${id}/cancel`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(input),
+	});
+	if (!res.ok) {
+		const body: ApiResponse<{
+			message?: string;
+			code?: string;
+			totalPaid?: string;
+		}> | null = await res.json().catch(() => null);
+		if (body?.data.code === "RESERVATION_CANCELLATION_CONFIRMATION_REQUIRED") {
+			throw new ReservationCancellationConfirmationRequiredError(
+				body.data.totalPaid ?? "0.00",
+			);
+		}
+		throw new Error(
+			body?.data.message ?? `Error al cancelar la reserva (${res.status})`,
+		);
+	}
+	const body: ApiResponse<{ reservation: Reservation }> = await res.json();
+	return body.data.reservation;
 }

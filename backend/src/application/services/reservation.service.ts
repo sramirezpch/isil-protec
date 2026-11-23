@@ -1,7 +1,9 @@
 import type {
+  Reservation,
   ReservationWithItems,
   ReservationWithPaymentSummary,
 } from '../../domain/entities/reservation.entity';
+import { normalizeCancellationReason } from '../../domain/entities/reservation.entity';
 import type { ReservationDiscountType } from '../../domain/entities/reservationItem.entity';
 import {
   calculateReservationPaymentSummary,
@@ -27,6 +29,7 @@ import {
 import type { IClientRepository } from '../port/client.repository';
 import type { IProductRepository } from '../port/product.repository';
 import type {
+  CancelReservationData,
   CreateReservationData,
   CreateReservationItemData,
   IReservationRepository,
@@ -49,6 +52,12 @@ export interface CreateReservationPaymentInput {
   reservationId: string;
   amount: unknown;
   paymentMethod: unknown;
+}
+
+export interface CancelReservationInput {
+  id: string;
+  reason: unknown;
+  confirmWithPayments: unknown;
 }
 
 const MAX_INTEGER_QUANTITY = 2_147_483_647n;
@@ -194,6 +203,16 @@ export class ReservationService {
       ),
       payment: created.payment,
     };
+  }
+
+  async cancel(input: CancelReservationInput): Promise<Reservation> {
+    const reason = normalizeCancellationReason(input.reason);
+    const data: CancelReservationData = {
+      id: input.id,
+      reason,
+      confirmWithPayments: input.confirmWithPayments === true,
+    };
+    return await this.reservationRepository.cancel(data);
   }
 
   private validateDueDate(value: unknown): string {

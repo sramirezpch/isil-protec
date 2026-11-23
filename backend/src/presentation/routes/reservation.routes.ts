@@ -10,5 +10,6 @@ export class ReservationRouter {
     this.router.post('/', this.reservationController.create);
     this.router.get('/:id/payments', this.reservationController.findPayments);
     this.router.post('/:id/payments', this.reservationController.createPayment);
+    this.router.post('/:id/cancel', this.reservationController.cancel);
   }
 }

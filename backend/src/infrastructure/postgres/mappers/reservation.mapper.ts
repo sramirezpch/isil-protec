@@ -13,6 +13,8 @@ export const toReservationDomain = (
   dueDate: row.dueDate,
   status: row.status,
   totalAmount: row.totalAmount,
+  cancellationReason: row.cancellationReason,
+  cancelledAt: row.cancelledAt,
   createdAt: row.createdAt,
   updatedAt: row.updatedAt,
   deletedAt: row.deletedAt,

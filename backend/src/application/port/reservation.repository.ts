@@ -1,4 +1,5 @@
 import type {
+  Reservation,
   ReservationStatus,
   ReservationWithItems,
   ReservationWithPaymentTotal,
@@ -33,6 +34,12 @@ export interface CreateReservationPaymentData {
   paymentMethod: ReservationPaymentMethod;
 }
 
+export interface CancelReservationData {
+  id: string;
+  reason: string;
+  confirmWithPayments: boolean;
+}
+
 export interface IReservationRepository {
   findAll(): Promise<ReservationWithPaymentTotal[]>;
   create(data: CreateReservationData): Promise<ReservationWithItems>;
@@ -45,4 +52,5 @@ export interface IReservationRepository {
     totalAmount: string;
     totalPaidBefore: string;
   }>;
+  cancel(data: CancelReservationData): Promise<Reservation>;
 }

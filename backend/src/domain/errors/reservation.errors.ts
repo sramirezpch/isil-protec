@@ -87,3 +87,35 @@ export class AbonoExcedeSaldoError extends Error {
     this.name = 'AbonoExcedeSaldoError';
   }
 }
+
+export class ReservationAlreadyCancelledError extends Error {
+  constructor() {
+    super('La reserva ya fue cancelada');
+    this.name = 'ReservationAlreadyCancelledError';
+  }
+}
+
+export class ReservationCannotBeCancelledError extends Error {
+  constructor() {
+    super('La reserva no se encuentra vigente y no puede cancelarse');
+    this.name = 'ReservationCannotBeCancelledError';
+  }
+}
+
+export class ReservationCancellationReasonInvalidError extends Error {
+  constructor() {
+    super(
+      'El motivo de cancelación es obligatorio y no debe exceder 500 caracteres',
+    );
+    this.name = 'ReservationCancellationReasonInvalidError';
+  }
+}
+
+export class ReservationCancellationConfirmationRequiredError extends Error {
+  constructor(public readonly totalPaid: string) {
+    super(
+      `La reserva tiene S/ ${totalPaid} abonados. Confirme para cancelar; el dinero no se devolverá automáticamente`,
+    );
+    this.name = 'ReservationCancellationConfirmationRequiredError';
+  }
+}

@@ -4,6 +4,10 @@ import {
   AbonoExcedeSaldoError,
   DuplicateReservationItemError,
   EmptyReservationItemsError,
+  ReservationAlreadyCancelledError,
+  ReservationCancellationConfirmationRequiredError,
+  ReservationCancellationReasonInvalidError,
+  ReservationCannotBeCancelledError,
   ReservationClientNotFoundError,
   ReservationDeadlineInvalidError,
   ReservationInvalidFieldError,
@@ -16,6 +20,7 @@ import {
 } from '../../../domain/errors/reservation.errors';
 import { type DtoResponse, toResponseDto } from '../../../utils';
 import type {
+  CancelReservationBody,
   CreateReservationBody,
   CreateReservationPaymentBody,
   ReservationIdParams,
@@ -120,6 +125,32 @@ export class ReservationController {
     }
   };
 
+  cancel = async (
+    req: Request<ReservationIdParams, DtoResponse, CancelReservationBody>,
+    res: Response,
+  ): Promise<Response> => {
+    try {
+      const id = validateUuid(req.params.id, 'id');
+      const body = req.body;
+      if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        throw new ReservationInvalidFieldError('body');
+      }
+
+      const reservation = await this.reservationService.cancel({
+        id,
+        reason: body.motivo,
+        confirmWithPayments: body.confirmarConAbonos,
+      });
+      return res.status(200).json(toResponseDto(true, { reservation }));
+    } catch (error) {
+      return this.handleError(
+        error,
+        'Ocurrió un error al cancelar la reserva',
+        res,
+      );
+    }
+  };
+
   private handleError(
     error: unknown,
     defaultMessage: string,
@@ -127,9 +158,14 @@ export class ReservationController {
   ): Response {
     let status = 500;
     let message = defaultMessage;
+    let errorCode: string | undefined;
+    let totalPaid: string | undefined;
 
     if (error instanceof ReservationNotFoundError) {
       status = 404;
+      message = error.message;
+    } else if (error instanceof ReservationCancellationReasonInvalidError) {
+      status = 400;
       message = error.message;
     } else if (
       error instanceof ReservationClientNotFoundError ||
@@ -148,14 +184,35 @@ export class ReservationController {
       message = error.message;
     } else if (
       error instanceof AbonoExcedeSaldoError ||
-      error instanceof ReservationNotVigenteError
+      error instanceof ReservationNotVigenteError ||
+      error instanceof ReservationAlreadyCancelledError ||
+      error instanceof ReservationCannotBeCancelledError
     ) {
       status = 409;
       message = error.message;
+      if (error instanceof ReservationAlreadyCancelledError) {
+        errorCode = 'RESERVATION_ALREADY_CANCELLED';
+      }
+      if (error instanceof ReservationCannotBeCancelledError) {
+        errorCode = 'RESERVATION_CANNOT_BE_CANCELLED';
+      }
+    } else if (
+      error instanceof ReservationCancellationConfirmationRequiredError
+    ) {
+      status = 409;
+      message = error.message;
+      errorCode = 'RESERVATION_CANCELLATION_CONFIRMATION_REQUIRED';
+      totalPaid = error.totalPaid;
     } else {
       console.error(defaultMessage, error);
     }
 
-    return res.status(status).json(toResponseDto(false, { message }));
+    return res.status(status).json(
+      toResponseDto(false, {
+        message,
+        ...(errorCode && { code: errorCode }),
+        ...(totalPaid && { totalPaid }),
+      }),
+    );
   }
 }

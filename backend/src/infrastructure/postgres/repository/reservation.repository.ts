@@ -1,13 +1,20 @@
-import { asc, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, sql } from 'drizzle-orm';
 import type {
+  CancelReservationData,
   CreateReservationData,
   CreateReservationPaymentData,
   IReservationRepository,
 } from '../../../application/port/reservation.repository';
 import type {
+  Reservation,
   ReservationItemWithProduct,
   ReservationWithItems,
   ReservationWithPaymentTotal,
+} from '../../../domain/entities/reservation.entity';
+import {
+  normalizeCancellationReason,
+  validateCancellationPaymentConfirmation,
+  validateReservationCancellationState,
 } from '../../../domain/entities/reservation.entity';
 import {
   formatMoneyCents,
@@ -324,6 +331,96 @@ export class ReservationRepository implements IReservationRepository {
         totalAmount: reservation.totalAmount,
         totalPaidBefore: sum.totalPaid,
       };
+    });
+  }
+
+  async cancel(data: CancelReservationData): Promise<Reservation> {
+    return await db.transaction(async (tx) => {
+      const [reservation] = await tx
+        .select()
+        .from(reservationTable)
+        .where(eq(reservationTable.id, data.id))
+        .for('update')
+        .limit(1);
+      if (!reservation) throw new ReservationNotFoundError();
+
+      validateReservationCancellationState(reservation.status);
+      const reason = normalizeCancellationReason(data.reason);
+
+      const [paymentSum] = await tx
+        .select({
+          totalPaid: sql<string>`COALESCE(SUM(${reservationPaymentTable.amount}), 0)::text`,
+        })
+        .from(reservationPaymentTable)
+        .where(eq(reservationPaymentTable.reservationId, data.id));
+      validateCancellationPaymentConfirmation(
+        paymentSum.totalPaid,
+        data.confirmWithPayments,
+      );
+
+      const items = await tx
+        .select({
+          productId: reservationItemTable.productId,
+          cantidadBloqueada: reservationItemTable.cantidadBloqueada,
+        })
+        .from(reservationItemTable)
+        .where(
+          and(
+            eq(reservationItemTable.reservationId, data.id),
+            gt(reservationItemTable.cantidadBloqueada, 0),
+          ),
+        );
+      const quantityByProduct = new Map<string, number>();
+      for (const item of items) {
+        quantityByProduct.set(
+          item.productId,
+          (quantityByProduct.get(item.productId) ?? 0) + item.cantidadBloqueada,
+        );
+      }
+
+      const productIds = [...quantityByProduct.keys()];
+      const products = productIds.length
+        ? await tx
+            .select({ id: productTable.id })
+            .from(productTable)
+            .where(inArray(productTable.id, productIds))
+            .orderBy(asc(productTable.id))
+            .for('update')
+        : [];
+      const lockedProductIds = new Set(products.map((product) => product.id));
+
+      for (const productId of productIds) {
+        if (!lockedProductIds.has(productId)) {
+          throw new ReservationProductNotFoundError(productId);
+        }
+        await tx
+          .update(productTable)
+          .set({
+            stock: sql`${productTable.stock} + ${quantityByProduct.get(productId)}`,
+            updatedAt: new Date(),
+          })
+          .where(eq(productTable.id, productId));
+      }
+
+      const cancelledAt = new Date();
+      const [updated] = await tx
+        .update(reservationTable)
+        .set({
+          status: 'CANCELADA',
+          cancellationReason: reason,
+          cancelledAt,
+          updatedAt: cancelledAt,
+        })
+        .where(
+          and(
+            eq(reservationTable.id, data.id),
+            eq(reservationTable.status, 'VIGENTE'),
+          ),
+        )
+        .returning();
+      if (!updated) throw new ReservationNotFoundError();
+
+      return toReservationDomain(updated);
     });
   }
 }
