@@ -6,6 +6,7 @@ import {
 	type ReservationPaymentHistory,
 	type ReservationPaymentMethod,
 } from "../lib/api";
+import ReservationItemsTable from "./ReservationItemsTable";
 
 type Props = {
 	reservation: Reservation;
@@ -30,7 +31,7 @@ const formatDate = (value: string): string =>
 		timeStyle: "short",
 	}).format(new Date(value));
 
-export default function ReservationPaymentModal({
+export default function ReservationDetailModal({
 	reservation,
 	onClose,
 	onUpdated,
@@ -124,17 +125,17 @@ export default function ReservationPaymentModal({
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
 			<section
-				aria-labelledby="reservation-payments-title"
+				aria-labelledby="reservation-detail-title"
 				aria-modal="true"
-				className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl"
+				className="max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl"
 				role="dialog"
 			>
 				<div className="mb-5 flex items-center justify-between gap-4">
 					<h2
 						className="m-0 text-xl font-bold text-slate-900"
-						id="reservation-payments-title"
+						id="reservation-detail-title"
 					>
-						Abonos de la reserva
+						Detalle de reserva
 					</h2>
 					<button
 						type="button"
@@ -158,6 +159,60 @@ export default function ReservationPaymentModal({
 				{loading && (
 					<p className="text-sm text-slate-500">Cargando abonos...</p>
 				)}
+
+				<dl className="mb-6 grid gap-3 rounded-md bg-slate-50 p-4 sm:grid-cols-2 lg:grid-cols-4">
+					<div>
+						<dt className="text-sm text-slate-500">Cliente</dt>
+						<dd className="m-0 font-semibold text-slate-900">
+							{reservation.client
+								? [reservation.client.name, reservation.client.lastName]
+										.filter(Boolean)
+										.join(" ") || reservation.client.phone
+								: "Cliente no disponible"}
+						</dd>
+					</div>
+					<div>
+						<dt className="text-sm text-slate-500">Fecha límite</dt>
+						<dd className="m-0 font-semibold text-slate-900">
+							{reservation.dueDate}
+						</dd>
+					</div>
+					<div>
+						<dt className="text-sm text-slate-500">Tipo</dt>
+						<dd className="m-0">
+							<span
+								className={`inline-block rounded px-2 py-1 text-xs font-semibold ${
+									reservation.type === "PREVENTA"
+										? "bg-amber-100 text-amber-800"
+										: "bg-indigo-100 text-indigo-700"
+								}`}
+							>
+								{reservation.type === "PREVENTA" ? "Preventa" : "Reserva"}
+							</span>
+						</dd>
+					</div>
+					<div>
+						<dt className="text-sm text-slate-500">Estado</dt>
+						<dd className="m-0">
+							<span
+								className={`inline-block rounded px-2 py-1 text-xs font-semibold ${
+									reservation.status === "VIGENTE"
+										? "bg-emerald-100 text-emerald-700"
+										: "bg-slate-200 text-slate-700"
+								}`}
+							>
+								{reservation.status === "VIGENTE" ? "Vigente" : "Cancelada"}
+							</span>
+						</dd>
+					</div>
+				</dl>
+
+				<h3 className="mb-2 text-sm font-semibold text-slate-800">
+					Figuras de la reserva
+				</h3>
+				<div className="mb-6">
+					<ReservationItemsTable items={reservation.items} />
+				</div>
 
 				{summary && (
 					<>

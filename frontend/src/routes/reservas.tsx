@@ -1,8 +1,8 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import ReservationCancellationModal from "../components/ReservationCancellationModal";
+import ReservationDetailModal from "../components/ReservationDetailModal";
 import ReservationFormModal from "../components/ReservationFormModal";
-import ReservationPaymentModal from "../components/ReservationPaymentModal";
 import {
 	cancelReservation,
 	createReservation,
@@ -133,15 +133,13 @@ function RouteComponent() {
 							<th className="px-4 py-3.5 font-semibold">Abonado</th>
 							<th className="px-4 py-3.5 font-semibold">Saldo pendiente</th>
 							<th className="px-4 py-3.5 font-semibold">Cancelación</th>
-							<th className="px-4 py-3.5 font-semibold">Figuras pendientes</th>
+							<th className="px-4 py-3.5 font-semibold">Figuras</th>
 							<th className="px-4 py-3.5 font-semibold">Acciones</th>
 						</tr>
 					</thead>
 					<tbody>
 						{reservations.map((reservation) => {
-							const pendingItems = reservation.items.filter(
-								(item) => item.cantidadBloqueada === 0,
-							);
+							const firstItem = reservation.items[0];
 							return (
 								<tr
 									key={reservation.id}
@@ -161,11 +159,21 @@ function RouteComponent() {
 													: "bg-slate-200 text-slate-700"
 											}`}
 										>
-											{reservation.status}
+											{reservation.status === "VIGENTE"
+												? "Vigente"
+												: "Cancelada"}
 										</span>
 									</td>
-									<td className="px-4 py-3.5 text-slate-700">
-										{reservation.type}
+									<td className="px-4 py-3.5">
+										<span
+											className={`rounded px-2 py-1 text-xs font-semibold ${
+												reservation.type === "PREVENTA"
+													? "bg-amber-100 text-amber-800"
+													: "bg-indigo-100 text-indigo-700"
+											}`}
+										>
+											{reservation.type === "PREVENTA" ? "Preventa" : "Reserva"}
+										</span>
 									</td>
 									<td className="px-4 py-3.5 font-semibold text-slate-900">
 										S/ {reservation.totalAmount}
@@ -194,11 +202,20 @@ function RouteComponent() {
 										)}
 									</td>
 									<td className="px-4 py-3.5 text-sm text-slate-700">
-										{pendingItems.length > 0
-											? pendingItems
-													.map((item) => item.product?.name ?? item.productId)
-													.join(", ")
-											: "—"}
+										{firstItem ? (
+											<>
+												<span className="font-medium text-slate-900">
+													{firstItem.product?.name ?? firstItem.productId}
+												</span>
+												{reservation.items.length > 1 && (
+													<span className="ml-1 text-slate-500">
+														+{reservation.items.length - 1} más
+													</span>
+												)}
+											</>
+										) : (
+											"—"
+										)}
 									</td>
 									<td className="px-4 py-3.5">
 										<div className="flex flex-col items-start gap-2">
@@ -210,7 +227,7 @@ function RouteComponent() {
 												}}
 												className="cursor-pointer rounded-md border border-indigo-200 bg-white px-3 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
 											>
-												Ver abonos
+												Ver detalle
 											</button>
 											{reservation.status === "VIGENTE" && (
 												<button
@@ -253,7 +270,7 @@ function RouteComponent() {
 			)}
 
 			{selectedReservation && (
-				<ReservationPaymentModal
+				<ReservationDetailModal
 					reservation={selectedReservation}
 					onClose={() => setSelectedReservation(null)}
 					onUpdated={handlePaymentsUpdated}
