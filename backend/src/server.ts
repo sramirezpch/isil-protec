@@ -1,6 +1,8 @@
+
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
+import { ArticleTypeService } from './application/services/articleType.service';
 import { BrandService } from './application/services/brand-service';
 import { ClientService } from './application/services/client.service';
 import { FormatoService } from './application/services/formato.service';
@@ -14,6 +16,7 @@ import { SupplierService } from './application/services/supplier.service';
 import { env } from './infrastructure/config/environment';
 import { LookupTaxTaxIdValidator } from './infrastructure/external/lookuptax/lookuptax-tax-id.validator';
 import { SkipTaxIdValidator } from './infrastructure/external/skip-tax-id.validator';
+import { ArticleTypeRepository } from './infrastructure/postgres/repository/articleType.repository';
 import { BrandRepository } from './infrastructure/postgres/repository/brand.repository';
 import { ClientRepository } from './infrastructure/postgres/repository/client.repository';
 import { FormatoRepository } from './infrastructure/postgres/repository/formato.repository';
@@ -24,6 +27,7 @@ import { PurchaseRepository } from './infrastructure/postgres/repository/purchas
 import { ReservationRepository } from './infrastructure/postgres/repository/reservation.repository';
 import { SaleRepository } from './infrastructure/postgres/repository/sale.repository';
 import { SupplierRepository } from './infrastructure/postgres/repository/supplier.repository';
+import { ArticleTypeController } from './presentation/controllers/articleType/articleType.controller';
 import { BrandController } from './presentation/controllers/brand/brand.controller';
 import { ClientController } from './presentation/controllers/client/client.controller';
 import { FormatoController } from './presentation/controllers/formato/formato.controller';
@@ -34,6 +38,7 @@ import { PurchaseController } from './presentation/controllers/purchase/purchase
 import { ReservationController } from './presentation/controllers/reservation/reservation.controller';
 import { SaleController } from './presentation/controllers/sale/sale.controller';
 import { SupplierController } from './presentation/controllers/supplier/supplier.controller';
+import { ArticleTypeRouter } from './presentation/routes/articleType.routes';
 import { BrandRouter } from './presentation/routes/brand.routes';
 import { ClientRouter } from './presentation/routes/client.routes';
 import { FormatoRouter } from './presentation/routes/formato.routes';
@@ -51,6 +56,11 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+const articleTypeRepository = new ArticleTypeRepository();
+const articleTypeService = new ArticleTypeService(articleTypeRepository);
+const articleTypeController = new ArticleTypeController(articleTypeService);
+const articleTypeRouter = new ArticleTypeRouter(articleTypeController);
 
 const formatoRepository = new FormatoRepository();
 const formatoService = new FormatoService(formatoRepository);
@@ -124,6 +134,7 @@ const reservationService = new ReservationService(
 const reservationController = new ReservationController(reservationService);
 const reservationRouter = new ReservationRouter(reservationController);
 
+app.use('/api/v1/article-type', articleTypeRouter.router);
 app.use('/api/v1/formato', formatoRouter.router);
 app.use('/api/v1/brand', brandRouter.router);
 app.use('/api/v1/franchise', franchiseRouter.router);
