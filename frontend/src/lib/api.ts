@@ -613,13 +613,80 @@ export type Reservation = {
 		phone: string;
 	};
 	dueDate: string;
-	status: "VIGENTE";
+	status: "VIGENTE" | "CANCELADA" | "CONVERTIDA";
 	type: "RESERVA" | "PREVENTA";
 	totalAmount: string;
+	totalPaid: string;
+	pendingBalance: string;
+	cancellationReason: string | null;
+	cancelledAt: string | null;
+	sale?: {
+		id: string;
+		status: SaleStatus;
+	};
 	items: ReservationItem[];
 	createdAt: string;
 	updatedAt: string;
 };
+
+export type ReservationPaymentMethod =
+	| "YAPE"
+	| "PLIN"
+	| "EFECTIVO"
+	| "TRANSFERENCIA"
+	| "TARJETA";
+
+export type ReservationPayment = {
+	id: string;
+	reservationId: string;
+	amount: string;
+	paymentMethod: ReservationPaymentMethod;
+	recordedAt: string;
+};
+
+export type SaleStatus =
+	| "PENDING_PAYMENT"
+	| "PENDING_DELIVERY"
+	| "DELIVERED"
+	| "CANCELLED";
+
+export type ReservationConversionResponse = {
+	reservation: {
+		id: string;
+		status: "CONVERTIDA";
+		totalAmount: string;
+		totalPaid: string;
+		pendingBalance: string;
+	};
+	sale: {
+		id: string;
+		reservationId: string | null;
+		status: SaleStatus;
+		totalAmount: string;
+	};
+	payment: ReservationPayment | null;
+};
+
+export type ReservationPaymentHistory = {
+	totalAmount: string;
+	totalPaid: string;
+	pendingBalance: string;
+	payments: ReservationPayment[];
+};
+
+export type ReservationPaymentRegistration = {
+	totalAmount: string;
+	totalPaid: string;
+	pendingBalance: string;
+	payment: ReservationPayment;
+};
+
+export class ReservationCancellationConfirmationRequiredError extends Error {
+	constructor(public readonly totalPaid: string) {
+		super("Confirme la cancelación con los abonos registrados.");
+		this.name = "ReservationCancellationConfirmationRequiredError";
+	}
+}
 
 export type ReservationItemData = {
 	productId: string;
@@ -655,4 +722,91 @@ export function createReservation(reservation: ReservationData): Promise<void> {
 		reservation,
 		"Error al registrar la reserva",
 	);
+}
+
+export async function getReservationPayments(
+	id: string,
+): Promise<ReservationPaymentHistory> {
+	const res = await fetch(`${API_URL}/reservation/${id}/payments`);
+	if (!res.ok) {
+		const body: ApiResponse<{ message?: string }> | null = await res
+			.json()
+			.catch(() => null);
+		throw new Error(
+			body?.data.message ?? `Error al obtener abonos (${res.status})`,
+		);
+	}
+	const body: ApiResponse<ReservationPaymentHistory> = await res.json();
+	return body.data;
+}
+
+export async function createReservationPayment(
+	id: string,
+	input: { amount: string; paymentMethod: ReservationPaymentMethod },
+): Promise<ReservationPaymentRegistration> {
+	const res = await fetch(`${API_URL}/reservation/${id}/payments`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(input),
+	});
+	if (!res.ok) {
+		const body: ApiResponse<{ message?: string }> | null = await res
+			.json()
+			.catch(() => null);
+		throw new Error(
+			body?.data.message ?? `Error al registrar el abono (${res.status})`,
+		);
+	}
+	const body: ApiResponse<ReservationPaymentRegistration> = await res.json();
+	return body.data;
+}
+
+export async function convertReservationToSale(
+	id: string,
+	input: { paymentMethod?: ReservationPaymentMethod },
+): Promise<ReservationConversionResponse> {
+	const res = await fetch(`${API_URL}/reservation/${id}/convert-to-sale`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(input),
+	});
+	if (!res.ok) {
+		const body: ApiResponse<{ message?: string }> | null = await res
+			.json()
+			.catch(() => null);
+		throw new Error(
+			body?.data.message ??
+				`Error al liquidar y convertir la reserva (${res.status})`,
+		);
+	}
+	const body: ApiResponse<ReservationConversionResponse> = await res.json();
+	return body.data;
+}
+
+export async function cancelReservation(
+	id: string,
+	input: { motivo: string; confirmarConAbonos: boolean },
+): Promise<Reservation> {
+	const res = await fetch(`${API_URL}/reservation/${id}/cancel`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(input),
+	});
+	if (!res.ok) {
+		const body: ApiResponse<{
+			message?: string;
+			code?: string;
+			totalPaid?: string;
+		}> | null = await res.json().catch(() => null);
+		if (body?.data.code === "RESERVATION_CANCELLATION_CONFIRMATION_REQUIRED") {
+			throw new ReservationCancellationConfirmationRequiredError(
+				body.data.totalPaid ?? "0.00",
+			);
+		}
+		throw new Error(
+			body?.data.message ?? `Error al cancelar la reserva (${res.status})`,
+		);
+	}
+	const body: ApiResponse<{ reservation: Reservation }> = await res.json();
+	return body.data.reservation;
 }

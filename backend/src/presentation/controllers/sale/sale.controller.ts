@@ -8,16 +8,18 @@ import {
   SaleCannotBeCancelledError,
   SaleCannotBeEditedError,
   SaleInvalidFieldError,
+  SaleInvalidStatusTransitionError,
   SaleNotFoundError,
   SaleProductNotFoundError,
   SaleStateConflictError,
+  SaleStockInsufficientError,
 } from '../../../domain/errors/sale.errors';
 import { type DtoResponse, toResponseDto } from '../../../utils';
 import {
   type CreateSaleBody,
   type SaleIdParams,
-  type UpdateSaleStatusBody,
   sanitizeString,
+  type UpdateSaleStatusBody,
   validateUuid,
 } from './utils';
 
@@ -178,8 +180,10 @@ export class SaleController {
       status = 404;
     } else if (
       error instanceof SaleStateConflictError ||
+      error instanceof SaleInvalidStatusTransitionError ||
       error instanceof SaleCannotBeEditedError ||
-      error instanceof SaleCannotBeCancelledError
+      error instanceof SaleCannotBeCancelledError ||
+      error instanceof SaleStockInsufficientError
     ) {
       status = 409;
     } else if (

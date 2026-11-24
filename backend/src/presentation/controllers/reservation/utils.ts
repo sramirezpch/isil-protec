@@ -15,6 +15,24 @@ export interface CreateReservationBody {
   items?: ReservationItemBody[];
 }
 
+export interface CreateReservationPaymentBody {
+  amount?: unknown;
+  paymentMethod?: unknown;
+}
+
+export interface ConvertReservationBody {
+  paymentMethod?: unknown;
+}
+
+export interface CancelReservationBody {
+  motivo?: unknown;
+  confirmarConAbonos?: unknown;
+}
+
+export interface ReservationIdParams {
+  id: string;
+}
+
 export const validateUuid = (id: unknown, fieldName: string): string => {
   if (typeof id !== 'string' || !isValidUuid(id)) {
     throw new ReservationInvalidFieldError(

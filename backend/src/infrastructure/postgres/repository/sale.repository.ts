@@ -1,10 +1,10 @@
 import {
   and,
+  asc,
   desc,
   eq,
   ilike,
   inArray,
-  notInArray,
   or,
   type SQL,
   sql,
@@ -18,14 +18,19 @@ import type {
   SaleStatus,
   SaleWithItems,
 } from '../../../domain/entities/sale.entity';
-import { SaleStateConflictError } from '../../../domain/errors/sale.errors';
+import {
+  SaleInvalidStatusTransitionError,
+  SaleProductNotFoundError,
+  SaleStateConflictError,
+  SaleStockInsufficientError,
+} from '../../../domain/errors/sale.errors';
 import { db } from '../db/connection';
 import { clientTable } from '../db/schema/client';
 import { productTable } from '../db/schema/product';
 import { saleTable } from '../db/schema/sale';
 import { saleItemTable } from '../db/schema/saleItem';
-import { transactionTable } from '../db/schema/transaction';
 import { toSaleDomain, toSaleItemDomain } from '../mappers/sale.mapper';
+import { insertSaleTransaction } from './sale-transaction.repository';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -39,7 +44,7 @@ export class SaleRepository implements ISaleRepository {
           name: clientTable.name,
           lastName: clientTable.lastName,
           phone: clientTable.phone,
-          aliasTiktok: clientTable.aliasTiktok
+          aliasTiktok: clientTable.aliasTiktok,
         },
       })
       .from(saleTable)
@@ -106,8 +111,7 @@ export class SaleRepository implements ISaleRepository {
     offset = 0,
   ): Promise<SaleWithItems[]> {
     const conditions: SQL[] = [];
-    if (status)
-      conditions.push(eq(saleTable.status, status as SaleStatus));
+    if (status) conditions.push(eq(saleTable.status, status as SaleStatus));
     if (query) {
       const sanitized = query
         .trim()
@@ -117,7 +121,7 @@ export class SaleRepository implements ISaleRepository {
         or(
           ilike(clientTable.name, `%${sanitized}%`),
           ilike(clientTable.phone, `%${sanitized}%`),
-          ilike(clientTable.aliasTiktok, `%${sanitized}%`)
+          ilike(clientTable.aliasTiktok, `%${sanitized}%`),
         ) as SQL,
       );
     }
@@ -202,10 +206,7 @@ export class SaleRepository implements ISaleRepository {
           updatedAt: new Date(),
         })
         .where(
-          and(
-            eq(saleTable.id, id),
-            eq(saleTable.status, 'PENDING_PAYMENT'),
-          ),
+          and(eq(saleTable.id, id), eq(saleTable.status, 'PENDING_PAYMENT')),
         )
         .returning({ id: saleTable.id });
 
@@ -218,6 +219,18 @@ export class SaleRepository implements ISaleRepository {
 
   async updateStatus(id: string, status: SaleStatus): Promise<void> {
     await db.transaction(async (tx) => {
+      const [sale] = await tx
+        .select({
+          status: saleTable.status,
+          totalAmount: saleTable.totalAmount,
+        })
+        .from(saleTable)
+        .where(eq(saleTable.id, id))
+        .for('update')
+        .limit(1);
+
+      if (!sale) throw new SaleStateConflictError();
+
       // Determine allowed source statuses for the target status
       const allowedMap: Record<string, SaleStatus[]> = {
         PENDING_PAYMENT: ['CANCELLED'],
@@ -225,40 +238,77 @@ export class SaleRepository implements ISaleRepository {
         DELIVERED: ['PENDING_DELIVERY'],
       };
       const allowed = allowedMap[status] ?? [];
-      await this.guardedStatusUpdate(tx, id, status, allowed);
+      if (!allowed.includes(sale.status)) {
+        throw new SaleInvalidStatusTransitionError();
+      }
 
-      // When transitioning to PENDING_DELIVERY, register a sale transaction
+      let products: {
+        id: string;
+        name: string;
+        stock: number;
+      }[] = [];
+      const quantityByProduct = new Map<string, number>();
+
       if (status === 'PENDING_DELIVERY') {
-        const [sale] = await tx
-          .select({ totalAmount: saleTable.totalAmount })
-          .from(saleTable)
-          .where(eq(saleTable.id, id))
-          .limit(1);
-
-        if (sale) {
-          await tx.insert(transactionTable).values({
-            saleId: id,
-            purchaseId: null,
-            type: 'sale',
-            amount: sale.totalAmount,
-            transactionDate: new Date(),
-          });
-        }
-
-        // Reduce stock for each sale item
         const items = await tx
           .select()
           .from(saleItemTable)
           .where(eq(saleItemTable.saleId, id));
 
         for (const item of items) {
+          quantityByProduct.set(
+            item.productId,
+            (quantityByProduct.get(item.productId) ?? 0) + item.quantity,
+          );
+        }
+
+        const productIds = [...quantityByProduct.keys()];
+        products = productIds.length
+          ? await tx
+              .select({
+                id: productTable.id,
+                name: productTable.name,
+                stock: productTable.stock,
+              })
+              .from(productTable)
+              .where(inArray(productTable.id, productIds))
+              .orderBy(asc(productTable.id))
+              .for('update')
+          : [];
+
+        const productsById = new Map(
+          products.map((product) => [product.id, product]),
+        );
+        for (const productId of productIds) {
+          const product = productsById.get(productId);
+          if (!product) throw new SaleProductNotFoundError(productId);
+
+          const requested = quantityByProduct.get(productId) ?? 0;
+          if (product.stock < requested) {
+            throw new SaleStockInsufficientError(
+              product.name,
+              product.stock,
+              requested,
+            );
+          }
+        }
+      }
+
+      await this.guardedStatusUpdate(tx, id, status, allowed);
+
+      // When transitioning to PENDING_DELIVERY, register a sale transaction
+      if (status === 'PENDING_DELIVERY') {
+        await insertSaleTransaction(tx, id, sale.totalAmount);
+
+        for (const product of products) {
+          const quantity = quantityByProduct.get(product.id) ?? 0;
           await tx
             .update(productTable)
             .set({
-              stock: sql`${productTable.stock} - ${item.quantity}`,
+              stock: sql`${productTable.stock} - ${quantity}`,
               updatedAt: new Date(),
             })
-            .where(eq(productTable.id, item.productId));
+            .where(eq(productTable.id, product.id));
         }
       }
     });

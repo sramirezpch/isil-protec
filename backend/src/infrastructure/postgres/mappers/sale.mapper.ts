@@ -6,6 +6,7 @@ import type { SaleItemModel } from '../db/schema/saleItem';
 export const toSaleDomain = (row: SaleModel): Sale => ({
   id: row.id,
   clientId: row.clientId,
+  reservationId: row.reservationId,
   totalAmount: row.totalAmount,
   saleDate: row.saleDate,
   status: row.status as Sale['status'],
@@ -20,6 +21,8 @@ export const toSaleItemDomain = (row: SaleItemModel): SaleItem => ({
   productId: row.productId,
   quantity: row.quantity,
   unitPrice: row.unitPrice,
+  discountType: row.discountType,
+  discountValue: row.discountValue,
   subtotal: row.subtotal,
   createdAt: row.createdAt,
   updatedAt: row.updatedAt,

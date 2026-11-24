@@ -8,5 +8,12 @@ export class ReservationRouter {
     this.router = Router();
     this.router.get('/', this.reservationController.findAll);
     this.router.post('/', this.reservationController.create);
+    this.router.get('/:id/payments', this.reservationController.findPayments);
+    this.router.post('/:id/payments', this.reservationController.createPayment);
+    this.router.post(
+      '/:id/convert-to-sale',
+      this.reservationController.convertToSale,
+    );
+    this.router.post('/:id/cancel', this.reservationController.cancel);
   }
 }

@@ -1,16 +1,37 @@
-import type { ReservationWithItems } from '../../domain/entities/reservation.entity';
+import type {
+  Reservation,
+  ReservationWithItems,
+  ReservationWithPaymentSummary,
+} from '../../domain/entities/reservation.entity';
+import { normalizeCancellationReason } from '../../domain/entities/reservation.entity';
 import type { ReservationDiscountType } from '../../domain/entities/reservationItem.entity';
+import {
+  calculateReservationPaymentSummary,
+  formatMoneyCents,
+  isReservationPaymentMethod,
+  MAX_NUMERIC_CENTS,
+  parseMoneyCents,
+  type ReservationPaymentHistory,
+  type ReservationPaymentMethod,
+  type ReservationPaymentRegistration,
+  validateReservationPaymentAmount,
+} from '../../domain/entities/reservationPayment.entity';
 import {
   DuplicateReservationItemError,
   EmptyReservationItemsError,
   ReservationClientNotFoundError,
   ReservationDeadlineInvalidError,
   ReservationInvalidFieldError,
+  ReservationNotFoundError,
+  ReservationNotVigenteError,
+  ReservationPaymentMethodInvalidError,
   ReservationProductNotFoundError,
 } from '../../domain/errors/reservation.errors';
 import type { IClientRepository } from '../port/client.repository';
 import type { IProductRepository } from '../port/product.repository';
 import type {
+  CancelReservationData,
+  ConvertReservationData,
   CreateReservationData,
   CreateReservationItemData,
   IReservationRepository,
@@ -29,7 +50,18 @@ export interface CreateReservationInput {
   items?: ReservationItemInput[];
 }
 
-const MAX_NUMERIC_CENTS = 999_999_999_999n;
+export interface CreateReservationPaymentInput {
+  reservationId: string;
+  amount: unknown;
+  paymentMethod: unknown;
+}
+
+export interface CancelReservationInput {
+  id: string;
+  reason: unknown;
+  confirmWithPayments: unknown;
+}
+
 const MAX_INTEGER_QUANTITY = 2_147_483_647n;
 
 export class ReservationService {
@@ -39,8 +71,15 @@ export class ReservationService {
     private readonly productRepository: IProductRepository,
   ) {}
 
-  async findAll(): Promise<ReservationWithItems[]> {
-    return await this.reservationRepository.findAll();
+  async findAll(): Promise<ReservationWithPaymentSummary[]> {
+    const reservations = await this.reservationRepository.findAll();
+    return reservations.map((reservation) => ({
+      ...reservation,
+      ...calculateReservationPaymentSummary(
+        reservation.totalAmount,
+        reservation.totalPaid,
+      ),
+    }));
   }
 
   async create(input: CreateReservationInput): Promise<ReservationWithItems> {
@@ -76,7 +115,7 @@ export class ReservationService {
         throw new ReservationProductNotFoundError(item.productId);
       }
 
-      const unitPriceCents = this.parseCents(product.price, 'price');
+      const unitPriceCents = parseMoneyCents(product.price, 'price');
       const subtotalCents = unitPriceCents * BigInt(quantity);
       if (subtotalCents > MAX_NUMERIC_CENTS) {
         throw new ReservationInvalidFieldError('subtotal');
@@ -96,13 +135,13 @@ export class ReservationService {
       items.push({
         productId: item.productId,
         quantity,
-        unitPrice: this.formatCents(unitPriceCents),
+        unitPrice: formatMoneyCents(unitPriceCents),
         discountType: discount.type,
         discountValue:
           discount.valueCents === null
             ? null
-            : this.formatCents(discount.valueCents),
-        lineTotal: this.formatCents(lineTotalCents),
+            : formatMoneyCents(discount.valueCents),
+        lineTotal: formatMoneyCents(lineTotalCents),
       });
     }
 
@@ -110,10 +149,88 @@ export class ReservationService {
       clientId: input.clientId,
       dueDate,
       status: 'VIGENTE',
-      totalAmount: this.formatCents(totalCents),
+      totalAmount: formatMoneyCents(totalCents),
       items,
     };
     return await this.reservationRepository.create(data);
+  }
+
+  async findPayments(id: string): Promise<ReservationPaymentHistory> {
+    const result = await this.reservationRepository.findPayments(id);
+    if (!result) throw new ReservationNotFoundError();
+
+    const totalPaidCents = result.payments.reduce(
+      (total, payment) => total + parseMoneyCents(payment.amount, 'amount'),
+      0n,
+    );
+    return {
+      ...calculateReservationPaymentSummary(
+        result.totalAmount,
+        formatMoneyCents(totalPaidCents),
+      ),
+      payments: result.payments,
+    };
+  }
+
+  async createPayment(
+    input: CreateReservationPaymentInput,
+  ): Promise<ReservationPaymentRegistration> {
+    if (!isReservationPaymentMethod(input.paymentMethod)) {
+      throw new ReservationPaymentMethodInvalidError();
+    }
+
+    const balance = await this.reservationRepository.getPaymentBalance(
+      input.reservationId,
+    );
+    if (!balance) throw new ReservationNotFoundError();
+    if (balance.status !== 'VIGENTE') throw new ReservationNotVigenteError();
+
+    const amountCents = validateReservationPaymentAmount(
+      input.amount,
+      balance.totalAmount,
+      balance.totalPaid,
+    );
+
+    const created = await this.reservationRepository.createPayment({
+      reservationId: input.reservationId,
+      amount: formatMoneyCents(amountCents),
+      paymentMethod: input.paymentMethod,
+    });
+    const totalPaidCents =
+      parseMoneyCents(created.totalPaidBefore, 'totalPaid') + amountCents;
+    return {
+      ...calculateReservationPaymentSummary(
+        created.totalAmount,
+        formatMoneyCents(totalPaidCents),
+      ),
+      payment: created.payment,
+    };
+  }
+
+  async cancel(input: CancelReservationInput): Promise<Reservation> {
+    const reason = normalizeCancellationReason(input.reason);
+    const data: CancelReservationData = {
+      id: input.id,
+      reason,
+      confirmWithPayments: input.confirmWithPayments === true,
+    };
+    return await this.reservationRepository.cancel(data);
+  }
+
+  async convertToSale(input: { id: string; paymentMethod: unknown }) {
+    let paymentMethod: ReservationPaymentMethod | null = null;
+    if (input.paymentMethod !== undefined && input.paymentMethod !== null) {
+      if (!isReservationPaymentMethod(input.paymentMethod)) {
+        throw new ReservationPaymentMethodInvalidError();
+      }
+      paymentMethod = input.paymentMethod;
+    }
+
+    const data: ConvertReservationData = {
+      id: input.id,
+      paymentMethod,
+    };
+    return await this.reservationRepository.convertToSale(data);
   }
 
   private validateDueDate(value: unknown): string {
@@ -168,22 +285,6 @@ export class ReservationService {
     return Number(quantity);
   }
 
-  private parseCents(value: unknown, field: string): bigint {
-    if (typeof value !== 'string') {
-      throw new ReservationInvalidFieldError(field);
-    }
-    const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(value.trim());
-    if (!match) throw new ReservationInvalidFieldError(field);
-
-    const whole = BigInt(match[1]);
-    const fraction = BigInt((match[2] ?? '').padEnd(2, '0'));
-    const cents = whole * 100n + fraction;
-    if (cents > MAX_NUMERIC_CENTS) {
-      throw new ReservationInvalidFieldError(field);
-    }
-    return cents;
-  }
-
   private calculateDiscount(
     type: unknown,
     value: unknown,
@@ -203,7 +304,7 @@ export class ReservationService {
       throw new ReservationInvalidFieldError('discountType');
     }
 
-    const valueCents = this.parseCents(value, 'discountValue');
+    const valueCents = parseMoneyCents(value, 'discountValue');
     if (type === 'PORCENTAJE') {
       if (valueCents > 10_000n) {
         throw new ReservationInvalidFieldError('discountValue');
@@ -223,9 +324,5 @@ export class ReservationService {
 
   private roundHalfUp(numerator: bigint, denominator: bigint): bigint {
     return (numerator + denominator / 2n) / denominator;
-  }
-
-  private formatCents(cents: bigint): string {
-    return `${cents / 100n}.${(cents % 100n).toString().padStart(2, '0')}`;
   }
 }

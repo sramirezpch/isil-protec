@@ -9,6 +9,7 @@ export type SaleStatus =
 export interface Sale {
   id: string;
   clientId: string;
+  reservationId: string | null;
   totalAmount: string;
   saleDate: Date;
   status: SaleStatus;
