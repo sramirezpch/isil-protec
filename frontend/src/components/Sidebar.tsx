@@ -33,12 +33,16 @@ export default function Sidebar() {
 				</Link>
 
 				<p className={groupClass}>Ventas</p>
+				<Link to="/ventas" className={itemClass}>
+					<span aria-hidden="true">💰</span>
+					Registro de Ventas
+				</Link>
 				<Link to="/clientes" className={itemClass}>
 					<span aria-hidden="true">👥</span>
 					Clientes
 				</Link>
 				<Link to="/reservas" className={itemClass}>
-					<span aria-hidden="true">🛍️</span>
+					<span aria-hidden="true">🔖</span>
 					Reservas
 				</Link>
 

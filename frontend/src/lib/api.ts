@@ -810,3 +810,107 @@ export async function cancelReservation(
 	const body: ApiResponse<{ reservation: Reservation }> = await res.json();
 	return body.data.reservation;
 }
+// Ventas: registra una venta a un cliente y descuenta stock al pasar a PENDING_DELIVERY
+export type SaleItem = {
+	id: string;
+	saleId?: string;
+	productId: string;
+	quantity: number;
+	unitPrice: string;
+	subtotal: string;
+	product?: { id: string; sku: string; name: string };
+};
+
+export type Sale = {
+	id: string;
+	clientId: string;
+	client?: {
+		id: string;
+		name: string | null;
+		lastName: string | null;
+		phone: string;
+	};
+	totalAmount: string;
+	saleDate: string;
+	status: SaleStatus;
+	items: SaleItem[];
+	createdAt: string;
+	updatedAt: string;
+};
+
+export type SaleItemData = {
+	productId: string;
+	quantity: number;
+	unitPrice: number;
+};
+
+export type SaleData = {
+	clientId: string;
+	saleDate?: string | null;
+	items: SaleItemData[];
+};
+
+export type SaleFilters = {
+	query?: string;
+	status?: SaleStatus;
+	page?: number;
+};
+
+export async function getSales(filters: SaleFilters = {}): Promise<{
+	sales: Sale[];
+	page: number;
+	limit: number;
+}> {
+	const params = new URLSearchParams();
+	if (filters.query) params.set("query", filters.query);
+	if (filters.status) params.set("status", filters.status);
+	if (filters.page) params.set("page", String(filters.page));
+	const search = params.size > 0 ? `?${params}` : "";
+	const res = await fetch(`${API_URL}/sale${search}`);
+	if (!res.ok) {
+		throw new Error(`Error al obtener las ventas (${res.status})`);
+	}
+	const body: ApiResponse<{
+		sales: Sale[];
+		page: number;
+		limit: number;
+	}> = await res.json();
+	return body.data;
+}
+
+export function createSale(sale: SaleData): Promise<void> {
+	return sendJson("POST", "/sale", sale, "Error al registrar la venta");
+}
+
+export function updateSale(
+	id: string,
+	changes: Partial<SaleData>,
+): Promise<void> {
+	return sendJson(
+		"PATCH",
+		`/sale/${id}`,
+		changes,
+		"Error al actualizar la venta",
+	);
+}
+
+export function updateSaleStatus(
+	id: string,
+	status: "PENDING_PAYMENT" | "PENDING_DELIVERY" | "DELIVERED",
+): Promise<void> {
+	return sendJson(
+		"PATCH",
+		`/sale/${id}/status`,
+		{ status },
+		"Error al actualizar el estado de la venta",
+	);
+}
+
+export function cancelSale(id: string): Promise<void> {
+	return sendJson(
+		"POST",
+		`/sale/${id}/cancel`,
+		undefined,
+		"Error al cancelar la venta",
+	);
+}
